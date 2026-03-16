@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2023 소상공인 실태조사 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;background:#f0f2f5;color:#1e293b;font-size:14px}
+header{background:#0f172a;color:#f8fafc;padding:20px 32px}
+header h1{font-size:1.3rem;font-weight:700}
+header p{font-size:0.78rem;opacity:.65;margin-top:4px}
+.container{max-width:1200px;margin:0 auto;padding:20px 16px}
+.section{background:#fff;border-radius:12px;padding:22px 24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.sec-title{font-size:1rem;font-weight:700;color:#0f172a;margin-bottom:3px}
+.sec-sub{font-size:.75rem;color:#94a3b8;margin-bottom:18px}
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:22px}
+.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;text-align:center}
+.card-label{font-size:.72rem;color:#64748b;margin-bottom:5px;line-height:1.3}
+.card-value{font-size:1.45rem;font-weight:700;color:#1e40af}
+.card-unit{font-size:.68rem;color:#94a3b8;margin-top:2px}
+/* Chart grid */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:720px){.chart-grid{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:260px}
+.chart-wrap.tall{height:320px}
+.chart-title{font-size:.8rem;font-weight:600;color:#374151;margin-bottom:8px}
+/* Toggles */
+.toggles{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.tbtn{padding:4px 13px;border:1px solid #cbd5e1;border-radius:20px;background:#fff;font-size:.75rem;cursor:pointer;transition:.12s;color:#475569}
+.tbtn.active{background:#1e40af;color:#fff;border-color:#1e40af}
+/* Table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:10px}
+.cmp-table th{background:#f1f5f9;padding:7px 10px;text-align:left;font-weight:600;border-bottom:2px solid #e2e8f0}
+.cmp-table td{padding:7px 10px;border-bottom:1px solid #f8fafc}
+.cmp-table tr:last-child td{border:none}
+.tr{text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700}
+.b-blue{background:#dbeafe;color:#1e40af}
+.b-red{background:#fee2e2;color:#dc2626}
+.b-green{background:#d1fae5;color:#059669}
+footer{text-align:center;font-size:.72rem;color:#94a3b8;padding:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>2023 소상공인 실태조사 대시보드</h1>
+  <p>숙박·음식점업(I) 영세 소상공인 분석 ｜ 출처: 중소벤처기업부·소상공인시장진흥공단 (국가승인통계 제142021호) ｜ 금액 단위: 만원</p>
+</header>
+
+<div class="container">
+
+  <!-- ① 세그먼트 규모 -->
+  <div class="section">
+    <div class="sec-title">① 타겟 세그먼트 규모</div>
+    <div class="sec-sub">가중치(사업체수가중값) 적용 추정치 | 전체 소상공인 대비 요식업·소규모 비중</div>
+    <div id="seg-cards" class="cards"></div>
+    <div class="chart-grid">
+      <div>
+        <div class="chart-title">요식업 종사자 규모별 분포 (추정 사업체 수)</div>
+        <div class="chart-wrap"><canvas id="c-wdist"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">요식업 종사자 규모별 비율 (도넛)</div>
+        <div class="chart-wrap"><canvas id="c-wpie"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 비용구조 -->
+  <div class="section">
+    <div class="sec-title">② 비용구조 분석</div>
+    <div class="sec-sub">매출 > 0인 표본 기준 각 비용 항목 중앙값(%) | 가중치 미적용</div>
+    <div class="toggles" id="cost-tog">
+      <button class="tbtn active" data-v="by_worker">종사자 규모별</button>
+      <button class="tbtn" data-v="by_size">소규모 vs 대규모</button>
+      <button class="tbtn" data-v="by_rev">매출 구간별</button>
+    </div>
+    <div class="chart-wrap tall"><canvas id="c-cost"></canvas></div>
+  </div>
+
+  <!-- ③ 수익성 분포 -->
+  <div class="section">
+    <div class="sec-title">③ 수익성 분포 — 잘 버티는 가게 vs 못 버티는 가게</div>
+    <div class="sec-sub">요식업 소규모(1~3명) + 매출 > 0 기준 | 가중치 미적용</div>
+    <div class="chart-grid">
+      <div>
+        <div class="chart-title">영업이익률 분포 히스토그램 (%)</div>
+        <div class="chart-wrap tall"><canvas id="c-hist"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">상위 25% vs 하위 25% 특성 비교</div>
+        <div id="surv-tbl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 애로사항 -->
+  <div class="section">
+    <div class="sec-title">④ 경영 애로사항 Top 5</div>
+    <div class="sec-sub">복수 응답 기준 응답 건수 | 가중치 미적용</div>
+    <div class="toggles" id="hard-tog">
+      <button class="tbtn active" data-v="small">소규모(1~3명)</button>
+      <button class="tbtn" data-v="large">대규모(4명+)</button>
+      <button class="tbtn" data-v="food_all">요식업 전체</button>
+      <button class="tbtn" data-v="bot25">이익률 하위 25%</button>
+    </div>
+    <div class="chart-wrap"><canvas id="c-hard"></canvas></div>
+  </div>
+
+  <!-- ⑤ 사업전망 -->
+  <div class="section">
+    <div class="sec-title">⑤ 사업 전망 — 폐업 의향 분석</div>
+    <div class="sec-sub">요식업 전체 운영계획 분포 (가중치 적용) | 하단 비교표: 요식업 소규모(1~3명) 기준</div>
+    <div class="chart-grid">
+      <div>
+        <div class="chart-title">향후 운영 계획 분포 (추정 사업체 수)</div>
+        <div class="chart-wrap"><canvas id="c-plan"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">폐업 의향 집단 주요 애로사항 Top 5</div>
+        <div class="chart-wrap"><canvas id="c-cl-hard"></canvas></div>
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <div class="chart-title">계속운영 vs 폐업의향 — 재무·운영 특성 비교</div>
+      <div id="plan-tbl"></div>
+    </div>
+  </div>
+
+</div>
+<footer>중소벤처기업부·소상공인시장진흥공단, 2023년 소상공인실태조사 ｜ 기준일: 2023.12.31 ｜ 표본 40,000개</footer>
+
+<script>
+const D = {"seg": {"cards": [{"label": "전체 소상공인", "value": 5960788, "unit": "개 (추정, 가중치 적용)"}, {"label": "숙박·음식점업", "value": 790003, "unit": "개 (추정, 가중치 적용)"}, {"label": "요식업 소규모(1~3명)", "value": 743978, "unit": "개 (추정, 가중치 적용)"}, {"label": "요식업 표본 수", "value": 2177, "unit": "개 (원시 표본)"}, {"label": "요식업 소규모 표본", "value": 2069, "unit": "개 (원시 표본)"}], "worker_dist": {"labels": ["1명(대표자만)", "2~3명", "4~9명", "10명 이상"], "weighted": [402777, 341201, 42732, 3293], "raw": [1330, 739, 96, 12]}}, "cost": {"by_worker": {"labels": ["1명(대표자만)", "2~3명", "4~9명", "10명 이상"], "datasets": {"원가율": [36.7, 39.5, 37.3, 40.3], "인건비율": [0.0, 15.6, 29.4, 24.1], "임차료율": [6.7, 6.5, 3.7, 5.8], "기타비용율": [10.6, 6.7, 4.2, 7.2], "영업이익률": [30.1, 21.8, 15.9, 19.6]}}, "by_size": {"labels": ["1~3명", "4명 이상"], "datasets": {"원가율": [37.9, 38.0], "인건비율": [0.0, 28.8], "임차료율": [6.7, 3.7], "기타비용율": [8.9, 4.5], "영업이익률": [26.6, 16.0]}}, "by_rev": {"labels": ["~5천만", "5천~1억", "1억~2억", "2억 이상"], "datasets": {"원가율": [37.9, 0, 0, 0], "인건비율": [0.0, 0, 0, 0], "임차료율": [6.4, 0, 0, 0], "기타비용율": [8.6, 0, 0, 0], "영업이익률": [25.8, 0, 0, 0]}}}, "surv": {"q25": 14.3, "q75": 41.8, "top25": {"n": 520, "매출중앙": 40, "이익률": 50.0, "원가율": 25.0, "인건비율": 0.0, "임차료율": 0.0, "기타": 10.0, "프랜차이즈": 5.6, "임차": 33.5, "디지털": 100.0}, "bot25": {"n": 528, "매출중앙": 70, "이익률": 3.9, "원가율": 40.3, "인건비율": 13.8, "임차료율": 10.5, "기타": 12.1, "프랜차이즈": 11.9, "임차": 61.9, "디지털": 100.0}, "all": {"n": 2069, "매출중앙": 64, "이익률": 26.6, "원가율": 37.9, "인건비율": 0.0, "임차료율": 6.7, "기타": 8.9, "프랜차이즈": 9.9, "임차": 53.2, "디지털": 100.0}, "hist": {"labels": ["-100~-90", "-90~-80", "-80~-70", "-70~-60", "-60~-50", "-50~-40", "-40~-30", "-30~-20", "-20~-10", "-10~0", "0~10", "10~20", "20~30", "30~40", "40~50", "50~60", "60~70", "70~80", "80~90", "90~100"], "all": [19, 1, 1, 7, 6, 7, 11, 13, 18, 44, 254, 340, 456, 295, 281, 191, 92, 24, 1, 8], "top": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 204, 191, 92, 24, 1, 8], "bot": [19, 1, 1, 7, 6, 7, 11, 13, 18, 44, 254, 147, 0, 0, 0, 0, 0, 0, 0, 0]}}, "hard": {"small": {"labels": ["상권 쇠퇴"], "values": [4631]}, "large": {"labels": ["상권 쇠퇴"], "values": [246]}, "food_all": {"labels": ["상권 쇠퇴"], "values": [4877]}, "bot25": {"labels": ["상권 쇠퇴"], "values": [1198]}}, "plan": {"labels": ["계속운영", "사업전환", "폐업 후 취업", "폐업·은퇴"], "counts": [2067, 21, 26, 63], "weighted": [745270, 8424, 14135, 22174], "cmp": {"계속운영": {"n": 1961, "매출중앙": 65, "이익률": 26.4, "원가율": 38.1, "인건비율": 0.0, "임차료율": 6.4, "기타": 8.8, "프랜차이즈": 9.9, "임차": 52.9, "디지털": 100.0}, "폐업의향": {"n": 87, "매출중앙": 50, "이익률": 28.0, "원가율": 35.6, "인건비율": 0.0, "임차료율": 11.8, "기타": 10.0, "프랜차이즈": 11.5, "임차": 55.2, "디지털": 100.0}}, "closure_hard": {"labels": ["상권 쇠퇴"], "values": [209]}, "cont_hard": {"labels": ["상권 쇠퇴"], "values": [4377]}}};
+
+// 유틸
+const comma = n => Math.round(n).toLocaleString('ko-KR');
+const pct   = v => (v == null ? '-' : v.toFixed(1) + '%');
+const BLUES4 = ['#1e40af','#2563eb','#60a5fa','#bfdbfe'];
+const COST_COLORS = {
+  '원가율':'#3b82f6','인건비율':'#f59e0b','임차료율':'#10b981','기타비용율':'#a78bfa','영업이익률':'#f87171'
+};
+
+// ─── ① 세그먼트 ───────────────────────────────────────────────────────────────
+D.seg.cards.forEach(c => {
+  document.getElementById('seg-cards').innerHTML +=
+    `<div class="card"><div class="card-label">${c.label}</div>` +
+    `<div class="card-value">${comma(c.value)}</div>` +
+    `<div class="card-unit">${c.unit}</div></div>`;
+});
+
+new Chart(document.getElementById('c-wdist'), {
+  type: 'bar',
+  data: {
+    labels: D.seg.worker_dist.labels,
+    datasets: [{
+      label: '추정 사업체 수',
+      data: D.seg.worker_dist.weighted,
+      backgroundColor: BLUES4, borderRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { ticks: { callback: v => comma(v) } },
+      x: { ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('c-wpie'), {
+  type: 'doughnut',
+  data: {
+    labels: D.seg.worker_dist.labels,
+    datasets: [{ data: D.seg.worker_dist.weighted, backgroundColor: BLUES4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => {
+        const tot = ctx.dataset.data.reduce((a,b)=>a+b,0);
+        return ` ${comma(ctx.parsed)} (${(ctx.parsed/tot*100).toFixed(1)}%)`;
+      }}}
+    }
+  }
+});
+
+// ─── ② 비용구조 ───────────────────────────────────────────────────────────────
+const COST_KEYS = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
+let costChart = null;
+
+function drawCost(view) {
+  const d = D.cost[view];
+  if (costChart) costChart.destroy();
+  costChart = new Chart(document.getElementById('c-cost'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: COST_KEYS.map(k => ({
+        label: k, data: d.datasets[k],
+        backgroundColor: COST_COLORS[k], borderRadius: 3,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } }
+      },
+      scales: {
+        x: { ticks: { font: { size: 11 } } },
+        y: { title: { display: true, text: '비율 (%, 중앙값)' }, ticks: { callback: v => v+'%' } }
+      }
+    }
+  });
+}
+drawCost('by_worker');
+document.getElementById('cost-tog').addEventListener('click', e => {
+  const b = e.target.closest('.tbtn'); if (!b) return;
+  document.querySelectorAll('#cost-tog .tbtn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  drawCost(b.dataset.v);
+});
+
+// ─── ③ 수익성 ─────────────────────────────────────────────────────────────────
+const h = D.surv.hist;
+new Chart(document.getElementById('c-hist'), {
+  type: 'bar',
+  data: {
+    labels: h.labels,
+    datasets: [
+      { label: '전체',                          data: h.all, backgroundColor: '#cbd5e180' },
+      { label: `상위 25% (≥${D.surv.q75}%)`,   data: h.top, backgroundColor: '#10b981cc' },
+      { label: `하위 25% (≤${D.surv.q25}%)`,   data: h.bot, backgroundColor: '#ef4444cc' },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } },
+    scales: {
+      x: { ticks: { font: { size: 9 }, maxRotation: 45 } },
+      y: { title: { display: true, text: '사업체 수 (표본)' } }
+    }
+  }
+});
+
+// 비교 테이블
+const T = D.surv.top25, B = D.surv.bot25;
+const sRows = [
+  ['표본 수',        comma(T.n)+'개',          comma(B.n)+'개'],
+  ['영업이익률(중앙)', pct(T['이익률']),        pct(B['이익률'])],
+  ['매출 중앙값',    comma(T['매출중앙'])+'만원', comma(B['매출중앙'])+'만원'],
+  ['원가율',         pct(T['원가율']),          pct(B['원가율'])],
+  ['인건비율',       pct(T['인건비율']),        pct(B['인건비율'])],
+  ['임차료율',       pct(T['임차료율']),        pct(B['임차료율'])],
+  ['기타비용율',     pct(T['기타']),            pct(B['기타'])],
+  ['프랜차이즈 비율', pct(T['프랜차이즈']),    pct(B['프랜차이즈'])],
+  ['임차 비율',      pct(T['임차']),            pct(B['임차'])],
+  ['디지털 도입률',  pct(T['디지털']),          pct(B['디지털'])],
+];
+document.getElementById('surv-tbl').innerHTML =
+  `<table class="cmp-table"><thead><tr>
+    <th>항목</th>
+    <th><span class="badge b-blue">상위 25%</span></th>
+    <th><span class="badge b-red">하위 25%</span></th>
+  </tr></thead><tbody>
+    ${sRows.map(r=>`<tr><td>${r[0]}</td><td class="tr">${r[1]}</td><td class="tr">${r[2]}</td></tr>`).join('')}
+  </tbody></table>`;
+
+// ─── ④ 애로사항 ───────────────────────────────────────────────────────────────
+let hardChart = null;
+function drawHard(view) {
+  const d = D.hard[view];
+  if (hardChart) hardChart.destroy();
+  hardChart = new Chart(document.getElementById('c-hard'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [{ label: '응답 건수', data: d.values, backgroundColor: '#3b82f6', borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { title: { display: true, text: '응답 건수' } },
+        y: { ticks: { font: { size: 12 } } }
+      }
+    }
+  });
+}
+drawHard('small');
+document.getElementById('hard-tog').addEventListener('click', e => {
+  const b = e.target.closest('.tbtn'); if (!b) return;
+  document.querySelectorAll('#hard-tog .tbtn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  drawHard(b.dataset.v);
+});
+
+// ─── ⑤ 사업전망 ───────────────────────────────────────────────────────────────
+new Chart(document.getElementById('c-plan'), {
+  type: 'doughnut',
+  data: {
+    labels: D.plan.labels,
+    datasets: [{ data: D.plan.weighted, backgroundColor: ['#10b981','#f59e0b','#f87171','#dc2626'] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => {
+        const tot = ctx.dataset.data.reduce((a,b)=>a+b,0);
+        return ` ${comma(ctx.parsed)} (${(ctx.parsed/tot*100).toFixed(1)}%)`;
+      }}}
+    }
+  }
+});
+
+const ch = D.plan.closure_hard;
+new Chart(document.getElementById('c-cl-hard'), {
+  type: 'bar',
+  data: {
+    labels: ch.labels,
+    datasets: [{ label: '폐업의향 집단', data: ch.values, backgroundColor: '#ef4444', borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { title: { display: true, text: '응답 건수' } }, y: { ticks: { font: { size: 11 } } } }
+  }
+});
+
+// 비교 테이블
+const CT = D.plan.cmp['계속운영'], CL = D.plan.cmp['폐업의향'];
+const pRows = [
+  ['표본 수',        comma(CT.n)+'개',             comma(CL.n)+'개'],
+  ['영업이익률(중앙)', pct(CT['이익률']),           pct(CL['이익률'])],
+  ['매출 중앙값',    comma(CT['매출중앙'])+'만원',   comma(CL['매출중앙'])+'만원'],
+  ['원가율',         pct(CT['원가율']),             pct(CL['원가율'])],
+  ['인건비율',       pct(CT['인건비율']),           pct(CL['인건비율'])],
+  ['임차료율',       pct(CT['임차료율']),           pct(CL['임차료율'])],
+  ['기타비용율',     pct(CT['기타']),               pct(CL['기타'])],
+  ['프랜차이즈 비율', pct(CT['프랜차이즈']),        pct(CL['프랜차이즈'])],
+  ['디지털 도입률',  pct(CT['디지털']),             pct(CL['디지털'])],
+];
+document.getElementById('plan-tbl').innerHTML =
+  `<table class="cmp-table"><thead><tr>
+    <th>항목</th>
+    <th><span class="badge b-green">계속운영</span></th>
+    <th><span class="badge b-red">폐업의향(폐업+은퇴)</span></th>
+  </tr></thead><tbody>
+    ${pRows.map(r=>`<tr><td>${r[0]}</td><td class="tr">${r[1]}</td><td class="tr">${r[2]}</td></tr>`).join('')}
+  </tbody></table>`;
+</script>
+</body>
+</html>
