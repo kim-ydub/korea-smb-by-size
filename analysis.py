@@ -18,8 +18,8 @@ print("CSV 로드 중 (EUC-KR)…")
 df = pd.read_csv(CSV, encoding="euc-kr", low_memory=False)
 print(f"  원본: {df.shape[0]:,}행 × {df.shape[1]}컬럼")
 
-# 이상값 제거: 매출액 > 100억(=1,000,000만원)
-df = df[df["경영_매출금액"] <= 1_000_000].copy()
+# 이상값 제거: 매출액 > 100억(=10,000백만원) — 단위: 백만원
+df = df[df["경영_매출금액"] <= 10_000].copy()
 
 # 요식업 (숙박·음식점업 I)
 food = df[df["산업대분류코드"] == "I"].copy()
@@ -28,7 +28,7 @@ print(f"  요식업 표본: {len(food):,}행")
 # ── 2. 전처리 ─────────────────────────────────────────────────────────────────
 WORDER = ["1명(대표자만)", "2~3명", "4~9명", "10명 이상"]
 SORDER = ["1~3명", "4명 이상"]
-RORDER = ["~5천만", "5천~1억", "1억~2억", "2억 이상"]
+RORDER = ["~6,400만", "6,400만~1억", "1억~2억", "2억 이상"]
 
 def worker_grp(n):
     if n == 1:    return "1명(대표자만)"
@@ -40,9 +40,10 @@ def size_grp(n):
     return "1~3명" if n <= 3 else "4명 이상"
 
 def rev_grp(v):
-    if v < 5_000:   return "~5천만"
-    elif v < 10_000: return "5천~1억"
-    elif v < 20_000: return "1억~2억"
+    # 단위: 백만원  (6,400만=64, 1억=100, 2억=200)
+    if v < 64:    return "~6,400만"
+    elif v < 100: return "6,400만~1억"
+    elif v < 200: return "1억~2억"
     return "2억 이상"
 
 food["종사자규모"] = food["일반_합계종사자수"].apply(worker_grp)
@@ -114,6 +115,15 @@ if DC_exist:
 else:
     sm["디지털도입"] = 0
 
+# 인건비율 참고: 직원 있는 가게(급여총액>0) 비율 및 해당 집단 중앙값
+sm_emp = sm[sm["경영_영업비용_급여총액"] > 0]
+wage_note = {
+    "employee_pct":    round(float(len(sm_emp) / len(sm) * 100), 1),
+    "employee_wage":   round(float(sm_emp["인건비율"].median()), 1),
+    "total_wage_med":  round(float(sm["인건비율"].median()), 1),
+}
+cost["wage_note"] = wage_note
+
 q25 = sm["영업이익률"].quantile(0.25)
 q75 = sm["영업이익률"].quantile(0.75)
 top = sm[sm["영업이익률"] >= q75]
@@ -151,21 +161,22 @@ surv = {
 }
 
 # ── 6. 분석 4: 애로사항 ───────────────────────────────────────────────────────
-HMAP = {
-    1: "상권 쇠퇴", 2: "동일업종 경쟁", 3: "원재료비",
-    4: "최저임금(인건비)", 5: "보증금·월세", 6: "부채상환",
-    7: "인력관리", 8: "판로개척(온라인)", 9: "디지털 기술도입", 10: "기타",
+# 각 컬럼이 항목별 1/NaN 플래그 구조 → 컬럼별 1의 개수를 집계
+HCOL_MAP = {
+    f"경영_애로사항{i}코드": name
+    for i, name in enumerate([
+        "상권 쇠퇴", "동일업종 경쟁", "원재료비",
+        "최저임금(인건비)", "보증금·월세", "부채상환",
+        "인력관리", "판로개척(온라인)", "디지털 기술도입", "기타",
+    ], start=1)
 }
-HC = [f"경영_애로사항{i}코드" for i in range(1, 11)]
-HC_exist = [c for c in HC if c in food.columns]
 
 def cnt_hard(sub, n=5):
-    cnt = {}
-    for c in HC_exist:
-        for v in sub[c].dropna():
-            k = int(v)
-            if k in HMAP:
-                cnt[HMAP[k]] = cnt.get(HMAP[k], 0) + 1
+    cnt = {
+        name: int((sub[col] == 1).sum())
+        for col, name in HCOL_MAP.items()
+        if col in sub.columns
+    }
     ranked = sorted(cnt.items(), key=lambda x: -x[1])[:n]
     return {"labels": [r[0] for r in ranked], "values": [r[1] for r in ranked]}
 
@@ -257,7 +268,7 @@ footer{text-align:center;font-size:.72rem;color:#94a3b8;padding:16px}
 <body>
 <header>
   <h1>2023 소상공인 실태조사 대시보드</h1>
-  <p>숙박·음식점업(I) 영세 소상공인 분석 ｜ 출처: 중소벤처기업부·소상공인시장진흥공단 (국가승인통계 제142021호) ｜ 금액 단위: 만원</p>
+  <p>숙박·음식점업(I) 영세 소상공인 분석 ｜ 출처: 중소벤처기업부·소상공인시장진흥공단 (국가승인통계 제142021호) ｜ 금액 단위: 백만원</p>
 </header>
 
 <div class="container">
@@ -289,6 +300,10 @@ footer{text-align:center;font-size:.72rem;color:#94a3b8;padding:16px}
       <button class="tbtn" data-v="by_rev">매출 구간별</button>
     </div>
     <div class="chart-wrap tall"><canvas id="c-cost"></canvas></div>
+    <div id="wage-note" style="margin-top:12px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:.8rem;color:#92400e;line-height:1.6">
+      <strong>인건비율 참고 (요식업 소규모 1~3명 기준)</strong><br>
+      전체 중앙값 <span id="wn-total"></span> | 직원 있는 가게 비율 <span id="wn-pct"></span> | 직원 있는 가게의 인건비율 중앙값 <span id="wn-emp"></span>
+    </div>
   </div>
 
   <!-- ③ 수익성 분포 -->
@@ -430,6 +445,10 @@ function drawCost(view) {
   });
 }
 drawCost('by_worker');
+// wage note
+document.getElementById('wn-total').textContent = pct(D.cost.wage_note.total_wage_med);
+document.getElementById('wn-pct').textContent   = pct(D.cost.wage_note.employee_pct);
+document.getElementById('wn-emp').textContent   = pct(D.cost.wage_note.employee_wage);
 document.getElementById('cost-tog').addEventListener('click', e => {
   const b = e.target.closest('.tbtn'); if (!b) return;
   document.querySelectorAll('#cost-tog .tbtn').forEach(x => x.classList.remove('active'));
@@ -464,7 +483,7 @@ const T = D.surv.top25, B = D.surv.bot25;
 const sRows = [
   ['표본 수',        comma(T.n)+'개',          comma(B.n)+'개'],
   ['영업이익률(중앙)', pct(T['이익률']),        pct(B['이익률'])],
-  ['매출 중앙값',    comma(T['매출중앙'])+'만원', comma(B['매출중앙'])+'만원'],
+  ['매출 중앙값',    comma(T['매출중앙'])+'백만원', comma(B['매출중앙'])+'백만원'],
   ['원가율',         pct(T['원가율']),          pct(B['원가율'])],
   ['인건비율',       pct(T['인건비율']),        pct(B['인건비율'])],
   ['임차료율',       pct(T['임차료율']),        pct(B['임차료율'])],
@@ -551,7 +570,7 @@ const CT = D.plan.cmp['계속운영'], CL = D.plan.cmp['폐업의향'];
 const pRows = [
   ['표본 수',        comma(CT.n)+'개',             comma(CL.n)+'개'],
   ['영업이익률(중앙)', pct(CT['이익률']),           pct(CL['이익률'])],
-  ['매출 중앙값',    comma(CT['매출중앙'])+'만원',   comma(CL['매출중앙'])+'만원'],
+  ['매출 중앙값',    comma(CT['매출중앙'])+'백만원',   comma(CL['매출중앙'])+'백만원'],
   ['원가율',         pct(CT['원가율']),             pct(CL['원가율'])],
   ['인건비율',       pct(CT['인건비율']),           pct(CL['인건비율'])],
   ['임차료율',       pct(CT['임차료율']),           pct(CL['임차료율'])],
