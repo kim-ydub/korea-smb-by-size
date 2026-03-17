@@ -11,6 +11,7 @@
   --green-4:#95a961; --green-5:#edf3a9;
   --neutral-900:#1a1a18; --neutral-700:#3d3d38; --neutral-500:#6b6b62;
   --neutral-300:#c4c4b8; --neutral-100:#f2f2ed; --neutral-0:#ffffff;
+  --amber:#b45309;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
@@ -22,63 +23,87 @@ header p{font-size:.78rem;opacity:.65;margin-top:4px}
 .section{background:var(--neutral-0);border-radius:12px;padding:22px 24px;
          margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
 .sec-title{font-size:1rem;font-weight:700;color:var(--neutral-900);margin-bottom:3px;line-height:1.3}
-.sec-sub{font-size:.75rem;color:var(--neutral-500);margin-bottom:18px}
+.sec-sub{font-size:.75rem;color:var(--neutral-500);margin-bottom:14px}
+
+/* ── 모드 토글 ── */
+.mode-toggle{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.mode-label{font-size:.8rem;color:var(--neutral-500)}
+.mode-btn{padding:5px 18px;border-radius:20px;font-size:.82rem;font-weight:600;
+          cursor:pointer;border:2px solid var(--neutral-300);
+          background:var(--neutral-100);color:var(--neutral-500);transition:all .15s}
+.mode-btn.active-left {background:var(--green-2);color:#fff;border-color:var(--green-2)}
+.mode-btn.active-right{background:var(--amber); color:#fff;border-color:var(--amber)}
 
 /* ── 히트맵 ── */
 .heatmap{display:grid;grid-template-columns:108px repeat(4,1fr);gap:5px;margin-bottom:14px}
-.hm-corner{}
-.hm-col-hdr{text-align:center;padding:6px 4px 10px;cursor:pointer;border-radius:6px;
-            transition:background .12s}
+.hm-col-hdr{text-align:center;padding:6px 4px 10px;cursor:pointer;border-radius:6px;transition:background .12s}
 .hm-col-hdr:hover{background:var(--neutral-100)}
-.hm-col-hdr.hdr-selected{background:var(--neutral-100);outline:2px solid var(--neutral-700);outline-offset:-2px}
-.hm-col-hdr .wk{font-size:.88rem;font-weight:700;color:var(--neutral-900)}
+.hm-col-hdr.hdr-left-selected {background:rgba(58,86,48,.12);outline:2px solid var(--green-2);outline-offset:-2px}
+.hm-col-hdr.hdr-right-selected{background:rgba(180,83,9,.10); outline:2px solid var(--amber);  outline-offset:-2px}
+.hm-col-hdr .wk  {font-size:.88rem;font-weight:700;color:var(--neutral-900)}
 .hm-col-hdr .wlbl{font-size:.72rem;color:var(--neutral-700);display:block;margin-top:1px}
 .hm-col-hdr .wref{font-size:.65rem;color:var(--neutral-300);display:block;margin-top:2px}
 .hm-row-hdr{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
-            padding-right:10px;text-align:right;gap:2px;cursor:pointer;border-radius:6px;
-            transition:background .12s}
+            padding-right:10px;text-align:right;gap:2px;cursor:pointer;border-radius:6px;transition:background .12s}
 .hm-row-hdr:hover{background:var(--neutral-100)}
-.hm-row-hdr.hdr-selected{background:var(--neutral-100);outline:2px solid var(--neutral-700);outline-offset:-2px}
-.hm-row-hdr .lk{font-size:.82rem;font-weight:700;color:var(--neutral-900)}
+.hm-row-hdr.hdr-left-selected {background:rgba(58,86,48,.12);outline:2px solid var(--green-2);outline-offset:-2px}
+.hm-row-hdr.hdr-right-selected{background:rgba(180,83,9,.10); outline:2px solid var(--amber);  outline-offset:-2px}
+.hm-row-hdr .lk  {font-size:.82rem;font-weight:700;color:var(--neutral-900)}
 .hm-row-hdr .llbl{font-size:.66rem;color:var(--neutral-500);line-height:1.3}
 .hm-cell{border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;
-         transition:all .15s;border:2px solid transparent;min-height:72px;
+         transition:all .15s;border:2px solid transparent;min-height:72px;position:relative;
          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .hm-cell:hover{transform:scale(1.04);box-shadow:0 2px 8px rgba(30,38,27,.18)}
-.hm-cell.selected{border-color:var(--neutral-900)!important;
-                  box-shadow:0 0 0 3px rgba(88,118,56,.4)}
+.hm-cell.sel-left {border-color:var(--green-2)!important;box-shadow:0 0 0 3px rgba(58,86,48,.28)}
+.hm-cell.sel-right{border-color:var(--amber)!important; box-shadow:0 0 0 3px rgba(180,83,9,.22)}
 .hm-cell.dim{opacity:.35}
 .hm-cell.dim:hover{opacity:.65}
 .hm-cell .rate{font-size:1.05rem;font-weight:700;line-height:1}
-.hm-cell .cnt{font-size:.65rem;opacity:.75;margin-top:1px}
+.hm-cell .cnt {font-size:.65rem;opacity:.75;margin-top:1px}
 .hm-cell.empty{background:var(--neutral-100)!important;cursor:default}
 .hm-cell.empty:hover{transform:none;box-shadow:none}
+.hm-badge{position:absolute;font-size:.58rem;font-weight:700;padding:1px 4px;
+          border-radius:3px;line-height:1.5;pointer-events:none}
+.hm-badge.badge-l{top:3px;left:3px; background:var(--green-2);color:#fff}
+.hm-badge.badge-r{top:3px;right:3px;background:var(--amber); color:#fff}
 
 /* ── 범례 ── */
-.legend{display:flex;align-items:center;gap:10px;font-size:.72rem;
-        color:var(--neutral-500);flex-wrap:wrap;margin-top:4px}
+.legend{display:flex;align-items:center;gap:10px;font-size:.72rem;color:var(--neutral-500);flex-wrap:wrap;margin-top:4px}
 .lg-item{display:flex;align-items:center;gap:4px}
 .lg-box{width:22px;height:13px;border-radius:3px;flex-shrink:0}
 
-/* ── 상세 카드 ── */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-       gap:10px;margin-bottom:22px}
-.card{background:var(--neutral-100);border:1px solid var(--neutral-300);
-      border-radius:10px;padding:14px 16px;text-align:center}
-.card-label{font-size:.72rem;color:var(--neutral-500);margin-bottom:5px;line-height:1.3}
-.card-value{font-size:1.3rem;font-weight:700;color:var(--green-3)}
-.card-unit{font-size:.65rem;color:var(--neutral-500);margin-top:2px}
+/* ── 2패널 비교 ── */
+.two-panel{display:grid;grid-template-columns:1fr 1fr;gap:0;
+           border:1px solid var(--neutral-300);border-radius:10px;overflow:hidden}
+@media(max-width:720px){.two-panel{grid-template-columns:1fr}}
+.panel{padding:20px;min-width:0}
+.panel-left{border-right:1px solid var(--neutral-300)}
+.panel-header{margin-bottom:12px}
+.panel-title{font-size:.82rem;font-weight:700;padding:3px 12px;border-radius:16px;display:inline-block;margin-bottom:4px}
+.panel-title.left {background:var(--green-2);color:#fff}
+.panel-title.right{background:var(--amber); color:#fff}
+.panel-keys{font-size:.72rem;color:var(--neutral-500);line-height:1.5}
+.panel-empty{display:flex;align-items:center;justify-content:center;min-height:160px;
+             font-size:.85rem;color:var(--neutral-300)}
+
+/* ── 스탯 테이블 ── */
+.stat-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:.82rem}
+.stat-table tr{border-bottom:1px solid var(--neutral-100)}
+.stat-table td{padding:5px 2px;vertical-align:middle}
+.st-label{color:var(--neutral-500);width:40%}
+.st-val  {font-weight:700;color:var(--green-3);text-align:right;width:30%}
+.st-delta{text-align:right;width:30%;font-size:.75rem;font-weight:600}
+.st-delta.pos{color:#16a34a}
+.st-delta.neg{color:#dc2626}
+.st-delta.neu{color:var(--neutral-300)}
 
 /* ── 차트 ── */
-.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-@media(max-width:720px){.chart-grid{grid-template-columns:1fr}}
-.chart-wrap{position:relative;height:240px}
-.chart-title{font-size:.8rem;font-weight:600;color:var(--neutral-700);margin-bottom:8px}
+.chart-title{font-size:.78rem;font-weight:600;color:var(--neutral-700);margin-bottom:6px}
+.chart-wrap{position:relative;height:200px}
 
 /* ── 참고 노트 ── */
 .dim-note{margin-top:14px;padding:10px 14px;background:#fef3c7;
-          border:1px solid #fde68a;border-radius:8px;font-size:.78rem;
-          color:#92400e;display:none}
+          border:1px solid #fde68a;border-radius:8px;font-size:.78rem;color:#92400e;display:none}
 footer{text-align:center;font-size:.72rem;color:var(--neutral-500);padding:16px}
 </style>
 </head>
@@ -94,7 +119,12 @@ footer{text-align:center;font-size:.72rem;color:var(--neutral-500);padding:16px}
   <!-- ── 히트맵 ── -->
   <div class="section">
     <div class="sec-title">세그먼트 히트맵 — 영업이익률 중앙값 (%)</div>
-    <div class="sec-sub">셀 클릭으로 다중 선택/해제 | 행·열 헤더 클릭으로 전체 선택/해제 | S3·S4는 핵심 타겟 외 참고용 (opacity 낮춤)</div>
+    <div class="sec-sub">LEFT · RIGHT 모드 전환 후 셀 클릭으로 담기 | 행·열 헤더 클릭으로 전체 선택 | S3·S4 참고용</div>
+    <div class="mode-toggle">
+      <span class="mode-label">선택 모드:</span>
+      <button id="btn-left"  class="mode-btn active-left"  onclick="setMode('left')">● LEFT</button>
+      <button id="btn-right" class="mode-btn"              onclick="setMode('right')">○ RIGHT</button>
+    </div>
     <div id="heatmap" class="heatmap"></div>
     <div class="legend">
       <span>영업이익률:</span>
@@ -106,20 +136,13 @@ footer{text-align:center;font-size:.72rem;color:var(--neutral-500);padding:16px}
     </div>
   </div>
 
-  <!-- ── 상세 패널 ── -->
+  <!-- ── 2패널 비교 ── -->
   <div class="section">
-    <div class="sec-title" id="detail-title">— 세그먼트를 선택하세요</div>
-    <div class="sec-sub">비용 항목 중앙값 | 가중치 적용 추정치 병기 | 가중치 미적용 표본 기준</div>
-    <div id="detail-cards" class="cards"></div>
-    <div class="chart-grid">
-      <div>
-        <div class="chart-title">비용 구조 (중앙값, %)</div>
-        <div class="chart-wrap"><canvas id="c-cost"></canvas></div>
-      </div>
-      <div>
-        <div class="chart-title">경영 애로사항 Top 5</div>
-        <div class="chart-wrap"><canvas id="c-hard"></canvas></div>
-      </div>
+    <div class="sec-title">LEFT / RIGHT 세그먼트 비교</div>
+    <div class="sec-sub">비용율·이익율: n기준 가중평균 | 애로사항: 합산 후 Top5 | ▲▼는 RIGHT − LEFT 차이</div>
+    <div class="two-panel">
+      <div class="panel panel-left"  id="panel-left"></div>
+      <div class="panel panel-right" id="panel-right"></div>
     </div>
     <div id="dim-note" class="dim-note">
       ⚠ S3·S4는 핵심 타겟(소규모 1~3명) 외 참고용 세그먼트입니다.
@@ -135,12 +158,10 @@ const D = {"grid": {"workers": ["S1", "S2", "S3", "S4"], "worker_labels": {"S1":
 Chart.defaults.font.family = "'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif";
 Chart.defaults.color = '#6b6b62';
 
-const comma = n => (n == null ? '-' : Math.round(n).toLocaleString('ko-KR'));
-const pct   = v => (v == null ? '-' : v.toFixed(1) + '%');
-
-// ── 색상 매핑 ─────────────────────────────────────────────────────────────────
 const G_BG   = ['#edf3a9','#95a961','#587638','#3a5630','#1e261b'];
 const G_TEXT = ['#1e261b','#1e261b','#ffffff','#ffffff','#ffffff'];
+const CKEYS  = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
+const COST_BG= ['#587638','#95a961','#3a5630','#c4c4b8','#1e261b'];
 
 function rateColor(r) {
   if (r == null) return { bg:'#f2f2ed', text:'#c4c4b8' };
@@ -148,44 +169,45 @@ function rateColor(r) {
   return { bg: G_BG[i], text: G_TEXT[i] };
 }
 
+// ── 상태 ─────────────────────────────────────────────────────────────────────
+let activeMode = 'left';
+const leftKeys  = new Set();
+const rightKeys = new Set();
+const panelCharts = { left: {}, right: {} };
+
+// ── 모드 전환 ─────────────────────────────────────────────────────────────────
+function setMode(mode) {
+  activeMode = mode;
+  document.getElementById('btn-left').className  = 'mode-btn' + (mode === 'left'  ? ' active-left'  : '');
+  document.getElementById('btn-right').className = 'mode-btn' + (mode === 'right' ? ' active-right' : '');
+}
+
 // ── 히트맵 빌드 ───────────────────────────────────────────────────────────────
 function buildHeatmap() {
   const { levels, workers, worker_labels: wl, level_labels: ll, segments: segs } = D.grid;
-  let h = '';
+  let h = '<div></div>';
 
-  // 헤더 행 (코너 + S1~S4)
-  h += '<div></div>';
   workers.forEach((w, i) => {
     const ref = i >= 2 ? `<span class="wref">(참고용)</span>` : '';
     h += `<div id="col-hdr-${w}" class="hm-col-hdr" onclick="toggleColumn('${w}')">
-      <span class="wk">${w}</span>
-      <span class="wlbl">${wl[w]}</span>
-      ${ref}
+      <span class="wk">${w}</span><span class="wlbl">${wl[w]}</span>${ref}
     </div>`;
   });
 
-  // 데이터 행 (L4→L1 순, 위=고매출)
   levels.forEach(l => {
     h += `<div id="row-hdr-${l}" class="hm-row-hdr" onclick="toggleRow('${l}')">
-      <span class="lk">${l}</span>
-      <span class="llbl">${ll[l]}</span>
+      <span class="lk">${l}</span><span class="llbl">${ll[l]}</span>
     </div>`;
-
     workers.forEach((w, i) => {
       const key = `${w}x${l}`;
       const seg = segs[key];
       const dim = i >= 2 ? ' dim' : '';
-
       if (!seg || seg.profit_rate == null) {
-        h += `<div class="hm-cell empty${dim}">
-          <span style="font-size:.68rem;color:var(--neutral-300)">—</span>
-        </div>`;
+        h += `<div class="hm-cell empty${dim}"><span style="font-size:.68rem;color:var(--neutral-300)">—</span></div>`;
         return;
       }
-
       const { bg, text } = rateColor(seg.profit_rate);
-      h += `<div id="cell-${w}-${l}" class="hm-cell${dim}"
-        style="background:${bg};color:${text}"
+      h += `<div id="cell-${w}-${l}" class="hm-cell${dim}" style="background:${bg};color:${text}"
         onclick="toggleCell('${key}')">
         <span class="rate">${seg.profit_rate.toFixed(1)}%</span>
         <span class="cnt">n=${seg.n}</span>
@@ -196,196 +218,199 @@ function buildHeatmap() {
   document.getElementById('heatmap').innerHTML = h;
 }
 
-// ── 다중 선택 상태 ────────────────────────────────────────────────────────────
-let costChart = null, hardChart = null;
-const selectedKeys = new Set();
-
+// ── 유효 셀 ──────────────────────────────────────────────────────────────────
 function isSelectable(key) {
   const seg = D.grid.segments[key];
   return seg && seg.profit_rate != null;
 }
+function getColumnKeys(w) { return D.grid.levels.map(l => `${w}x${l}`).filter(isSelectable); }
+function getRowKeys(l)    { return D.grid.workers.map(w => `${w}x${l}`).filter(isSelectable); }
 
-function getColumnKeys(w) {
-  return D.grid.levels.map(l => `${w}x${l}`).filter(isSelectable);
-}
-
-function getRowKeys(l) {
-  return D.grid.workers.map(w => `${w}x${l}`).filter(isSelectable);
-}
-
+// ── 셀 토글 ──────────────────────────────────────────────────────────────────
 function toggleCell(key) {
   if (!isSelectable(key)) return;
-  if (selectedKeys.has(key)) selectedKeys.delete(key);
-  else selectedKeys.add(key);
-  syncSelectionUI();
-  updateDetail();
+  const target = activeMode === 'left' ? leftKeys  : rightKeys;
+  const other  = activeMode === 'left' ? rightKeys : leftKeys;
+  if (target.has(key)) target.delete(key);
+  else { other.delete(key); target.add(key); }
+  syncUI();
 }
 
+// ── 헤더 클릭 ────────────────────────────────────────────────────────────────
 function toggleColumn(w) {
-  const keys = getColumnKeys(w);
-  const allSelected = keys.length > 0 && keys.every(k => selectedKeys.has(k));
-  if (allSelected) keys.forEach(k => selectedKeys.delete(k));
-  else keys.forEach(k => selectedKeys.add(k));
-  syncSelectionUI();
-  updateDetail();
+  const keys   = getColumnKeys(w);
+  const target = activeMode === 'left' ? leftKeys  : rightKeys;
+  const other  = activeMode === 'left' ? rightKeys : leftKeys;
+  const allIn  = keys.length > 0 && keys.every(k => target.has(k));
+  if (allIn) keys.forEach(k => target.delete(k));
+  else       keys.forEach(k => { other.delete(k); target.add(k); });
+  syncUI();
 }
-
 function toggleRow(l) {
-  const keys = getRowKeys(l);
-  const allSelected = keys.length > 0 && keys.every(k => selectedKeys.has(k));
-  if (allSelected) keys.forEach(k => selectedKeys.delete(k));
-  else keys.forEach(k => selectedKeys.add(k));
-  syncSelectionUI();
-  updateDetail();
+  const keys   = getRowKeys(l);
+  const target = activeMode === 'left' ? leftKeys  : rightKeys;
+  const other  = activeMode === 'left' ? rightKeys : leftKeys;
+  const allIn  = keys.length > 0 && keys.every(k => target.has(k));
+  if (allIn) keys.forEach(k => target.delete(k));
+  else       keys.forEach(k => { other.delete(k); target.add(k); });
+  syncUI();
 }
 
-function syncSelectionUI() {
-  // 셀
-  document.querySelectorAll('.hm-cell').forEach(el => el.classList.remove('selected'));
-  selectedKeys.forEach(key => {
-    const [w, l] = key.split('x');
-    const el = document.getElementById(`cell-${w}-${l}`);
-    if (el) el.classList.add('selected');
+// ── UI 동기화 ─────────────────────────────────────────────────────────────────
+function syncUI() {
+  // 셀 배지 & 테두리 초기화
+  document.querySelectorAll('.hm-cell').forEach(el => {
+    el.classList.remove('sel-left','sel-right');
+    el.querySelectorAll('.hm-badge').forEach(b => b.remove());
   });
-  // 열 헤더
+  function applyBadge(keysSet, side) {
+    keysSet.forEach(key => {
+      const [w, l] = key.split('x');
+      const el = document.getElementById(`cell-${w}-${l}`);
+      if (!el) return;
+      el.classList.add(`sel-${side}`);
+      const b = document.createElement('span');
+      b.className = `hm-badge badge-${side[0]}`; b.textContent = side[0].toUpperCase();
+      el.appendChild(b);
+    });
+  }
+  applyBadge(leftKeys,  'left');
+  applyBadge(rightKeys, 'right');
+
+  // 헤더 상태
   D.grid.workers.forEach(w => {
-    const hdr = document.getElementById(`col-hdr-${w}`);
+    const hdr  = document.getElementById(`col-hdr-${w}`);
     if (!hdr) return;
     const keys = getColumnKeys(w);
-    hdr.classList.toggle('hdr-selected', keys.length > 0 && keys.every(k => selectedKeys.has(k)));
+    hdr.classList.toggle('hdr-left-selected',  keys.length > 0 && keys.every(k => leftKeys.has(k)));
+    hdr.classList.toggle('hdr-right-selected', keys.length > 0 && keys.every(k => rightKeys.has(k)));
   });
-  // 행 헤더
   D.grid.levels.forEach(l => {
-    const hdr = document.getElementById(`row-hdr-${l}`);
+    const hdr  = document.getElementById(`row-hdr-${l}`);
     if (!hdr) return;
     const keys = getRowKeys(l);
-    hdr.classList.toggle('hdr-selected', keys.length > 0 && keys.every(k => selectedKeys.has(k)));
+    hdr.classList.toggle('hdr-left-selected',  keys.length > 0 && keys.every(k => leftKeys.has(k)));
+    hdr.classList.toggle('hdr-right-selected', keys.length > 0 && keys.every(k => rightKeys.has(k)));
   });
+
+  // dim-note
+  const hasDim = [...leftKeys, ...rightKeys].some(k => k.startsWith('S3') || k.startsWith('S4'));
+  document.getElementById('dim-note').style.display = hasDim ? 'block' : 'none';
+
+  updatePanel('left');
+  updatePanel('right');
 }
 
-// ── 상세 패널 업데이트 ────────────────────────────────────────────────────────
-function updateDetail() {
-  if (selectedKeys.size === 0) {
-    document.getElementById('detail-title').textContent = '— 세그먼트를 선택하세요';
-    document.getElementById('detail-cards').innerHTML = '';
-    document.getElementById('dim-note').style.display = 'none';
-    if (costChart) { costChart.destroy(); costChart = null; }
-    if (hardChart) { hardChart.destroy(); hardChart = null; }
-    return;
-  }
-
-  const segs = [...selectedKeys].map(k => D.grid.segments[k]);
-
-  // 제목
-  const titleStr = [...selectedKeys].sort().map(k => k.replace('x', '×')).join(', ');
-  const suffix = selectedKeys.size === 1 ? ' 상세' : ' 종합';
-  document.getElementById('detail-title').textContent = titleStr + suffix;
-
-  // ── 집계 ──
+// ── 집계 ─────────────────────────────────────────────────────────────────────
+function computeAggregate(keysSet) {
+  const segs = [...keysSet].map(k => D.grid.segments[k]);
   const totalN        = segs.reduce((a, s) => a + s.n, 0);
   const totalWeighted = segs.reduce((a, s) => a + s.weighted, 0);
 
-  // 영업이익률: n 기준 가중평균
-  const vProfit = segs.filter(s => s.profit_rate != null);
-  const nProfit = vProfit.reduce((a, s) => a + s.n, 0);
-  const profit_rate = nProfit > 0
-    ? vProfit.reduce((a, s) => a + s.profit_rate * s.n, 0) / nProfit : null;
+  const vP = segs.filter(s => s.profit_rate != null);
+  const nP = vP.reduce((a, s) => a + s.n, 0);
+  const profit_rate = nP > 0 ? vP.reduce((a, s) => a + s.profit_rate * s.n, 0) / nP : null;
 
-  // 비용 구조: n 기준 가중평균
-  const CKEYS = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
-  const vCost = segs.filter(s => s.cost != null);
-  const nCost = vCost.reduce((a, s) => a + s.n, 0);
+  const vC = segs.filter(s => s.cost != null);
+  const nC = vC.reduce((a, s) => a + s.n, 0);
   const cost = {};
-  CKEYS.forEach(k => {
-    cost[k] = nCost > 0
-      ? vCost.reduce((a, s) => a + (s.cost[k] ?? 0) * s.n, 0) / nCost : null;
-  });
+  CKEYS.forEach(k => { cost[k] = nC > 0 ? vC.reduce((a, s) => a + (s.cost[k] ?? 0) * s.n, 0) / nC : null; });
 
-  // 애로사항: 셀별 값 합산 후 Top5 재정렬
   const hardMap = {};
   segs.forEach(s => {
     if (!s.hardship) return;
-    s.hardship.labels.forEach((lbl, i) => {
-      hardMap[lbl] = (hardMap[lbl] || 0) + s.hardship.values[i];
-    });
+    s.hardship.labels.forEach((lbl, i) => { hardMap[lbl] = (hardMap[lbl] || 0) + s.hardship.values[i]; });
   });
   const hardTop = Object.entries(hardMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const hardship = { labels: hardTop.map(e => e[0]), values: hardTop.map(e => e[1]) };
 
-  // 폐업 의향: n 기준 가중평균
-  const vClose = segs.filter(s => s.closure_pct != null);
-  const nClose = vClose.reduce((a, s) => a + s.n, 0);
-  const closure_pct = nClose > 0
-    ? vClose.reduce((a, s) => a + s.closure_pct * s.n, 0) / nClose : null;
+  const vCl = segs.filter(s => s.closure_pct != null);
+  const nCl = vCl.reduce((a, s) => a + s.n, 0);
+  const closure_pct = nCl > 0 ? vCl.reduce((a, s) => a + s.closure_pct * s.n, 0) / nCl : null;
 
-  // 매출 중앙값: n 기준 가중평균
-  const vSales = segs.filter(s => s.매출중앙 != null);
-  const nSales = vSales.reduce((a, s) => a + s.n, 0);
-  const 매출중앙 = nSales > 0
-    ? vSales.reduce((a, s) => a + s.매출중앙 * s.n, 0) / nSales : null;
+  const titleKeys = [...keysSet].sort().map(k => k.replace('x', '×')).join(', ');
+  return { totalN, totalWeighted, profit_rate, cost, hardTop, closure_pct, titleKeys };
+}
 
-  // 참고 노트
-  const isDim = [...selectedKeys].some(k => k.startsWith('S3') || k.startsWith('S4'));
-  document.getElementById('dim-note').style.display = isDim ? 'block' : 'none';
+// ── 패널 렌더 ─────────────────────────────────────────────────────────────────
+function updatePanel(side) {
+  const keysSet = side === 'left' ? leftKeys : rightKeys;
+  const el = document.getElementById(`panel-${side}`);
 
-  // 카드
-  const unitLabel = selectedKeys.size > 1 ? 'n기준 가중평균' : '중앙값';
-  const cards = [
-    { label: '표본 수',        value: comma(totalN),             unit: '개' },
-    { label: '추정 사업체 수', value: comma(totalWeighted),      unit: '개 (가중치)' },
-    { label: '영업이익률',     value: profit_rate != null ? profit_rate.toFixed(1)+'%' : '-', unit: unitLabel },
-    { label: '매출 중앙값',    value: 매출중앙 != null ? comma(Math.round(매출중앙))+'백만' : '-', unit: '' },
-    { label: '폐업 의향',      value: closure_pct != null ? closure_pct.toFixed(1)+'%' : '-', unit: unitLabel },
-  ];
-  document.getElementById('detail-cards').innerHTML = cards.map(c =>
-    `<div class="card">
-      <div class="card-label">${c.label}</div>
-      <div class="card-value">${c.value}</div>
-      <div class="card-unit">${c.unit}</div>
-    </div>`
-  ).join('');
+  if (panelCharts[side].cost) { panelCharts[side].cost.destroy(); panelCharts[side].cost = null; }
+  if (panelCharts[side].hard) { panelCharts[side].hard.destroy(); panelCharts[side].hard = null; }
 
-  // 비용 구조 차트
-  if (costChart) costChart.destroy();
-  const costBg = ['#587638','#95a961','#3a5630','#c4c4b8','#1e261b'];
-  costChart = new Chart(document.getElementById('c-cost'), {
+  const headerHTML = `<div class="panel-header"><span class="panel-title ${side}">${side.toUpperCase()}</span>`;
+
+  if (keysSet.size === 0) {
+    el.innerHTML = headerHTML + `</div><div class="panel-empty">셀을 선택해주세요</div>`;
+    return;
+  }
+
+  const agg    = computeAggregate(keysSet);
+  const refAgg = (side === 'right' && leftKeys.size > 0) ? computeAggregate(leftKeys) : null;
+
+  function fv(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
+  function deltaCell(val, ref) {
+    if (!refAgg || val == null || ref == null) return `<td class="st-delta neu"></td>`;
+    const d = val - ref;
+    if (Math.abs(d) < 0.05) return `<td class="st-delta neu">—</td>`;
+    const cls = d > 0 ? 'pos' : 'neg';
+    return `<td class="st-delta ${cls}">${d > 0 ? '▲' : '▼'}${Math.abs(d).toFixed(1)}%p</td>`;
+  }
+  const hasDelta = side === 'right';
+  const dc = (v, r) => hasDelta ? deltaCell(v, r) : '';
+
+  let rows = `
+    <tr><td class="st-label">표본 수</td>
+        <td class="st-val">${agg.totalN.toLocaleString('ko-KR')}개</td>
+        ${hasDelta ? '<td class="st-delta neu"></td>' : ''}</tr>
+    <tr><td class="st-label">추정 사업체</td>
+        <td class="st-val">${agg.totalWeighted.toLocaleString('ko-KR')}개</td>
+        ${hasDelta ? '<td class="st-delta neu"></td>' : ''}</tr>
+    <tr><td class="st-label">영업이익률</td>
+        <td class="st-val">${fv(agg.profit_rate)}</td>
+        ${dc(agg.profit_rate, refAgg?.profit_rate)}</tr>`;
+  ['원가율','인건비율','임차료율','기타비용율'].forEach(k => {
+    rows += `<tr><td class="st-label">${k}</td>
+        <td class="st-val">${fv(agg.cost[k])}</td>
+        ${dc(agg.cost[k], refAgg?.cost[k])}</tr>`;
+  });
+  rows += `<tr><td class="st-label">폐업 의향</td>
+        <td class="st-val">${fv(agg.closure_pct)}</td>
+        ${dc(agg.closure_pct, refAgg?.closure_pct)}</tr>`;
+
+  el.innerHTML = headerHTML +
+    `<div class="panel-keys">${agg.titleKeys}</div></div>
+    <table class="stat-table">${rows}</table>
+    <div class="chart-title">비용 구조 (%)</div>
+    <div class="chart-wrap"><canvas id="c-cost-${side}"></canvas></div>
+    <div class="chart-title" style="margin-top:12px">경영 애로사항 Top 5</div>
+    <div class="chart-wrap"><canvas id="c-hard-${side}"></canvas></div>`;
+
+  const hardColor = side === 'left' ? '#587638' : '#b45309';
+
+  panelCharts[side].cost = new Chart(document.getElementById(`c-cost-${side}`), {
     type: 'bar',
-    data: {
-      labels: CKEYS,
-      datasets: [{ data: CKEYS.map(k => cost[k] ?? 0), backgroundColor: costBg, borderRadius: 4 }]
-    },
+    data: { labels: CKEYS, datasets: [{ data: CKEYS.map(k => agg.cost[k] ?? 0), backgroundColor: COST_BG, borderRadius: 4 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` } }
-      },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` } } },
       scales: {
-        x: { grid: { color:'#f2f2ed' },
-             ticks: { callback: v => v+'%', font: { size:10 } },
-             title: { display:true, text: selectedKeys.size > 1 ? '% (n기준 가중평균)' : '% (중앙값)',
-                      color:'#6b6b62', font:{ size:10 } } },
-        y: { grid: { display:false }, ticks: { font:{ size:11 } } }
+        x: { grid: { color:'#f2f2ed' }, ticks: { callback: v => v+'%', font:{ size:10 } } },
+        y: { grid: { display:false }, ticks: { font:{ size:10 } } }
       }
     }
   });
 
-  // 애로사항 차트
-  if (hardChart) hardChart.destroy();
-  hardChart = new Chart(document.getElementById('c-hard'), {
+  panelCharts[side].hard = new Chart(document.getElementById(`c-hard-${side}`), {
     type: 'bar',
-    data: {
-      labels: hardship.labels,
-      datasets: [{ data: hardship.values, backgroundColor: '#587638', borderRadius: 4 }]
-    },
+    data: { labels: agg.hardTop.map(e => e[0]), datasets: [{ data: agg.hardTop.map(e => e[1]), backgroundColor: hardColor, borderRadius: 4 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { grid: { color:'#f2f2ed' },
-             ticks: { font:{ size:10 } },
-             title: { display:true, text:'응답 건수', color:'#6b6b62', font:{ size:10 } } },
-        y: { grid: { display:false }, ticks: { font:{ size:11 } } }
+        x: { grid: { color:'#f2f2ed' }, ticks: { font:{ size:10 } } },
+        y: { grid: { display:false }, ticks: { font:{ size:10 } } }
       }
     }
   });
@@ -393,7 +418,9 @@ function updateDetail() {
 
 // ── 초기화 ────────────────────────────────────────────────────────────────────
 buildHeatmap();
-toggleCell('S1xL2');   // 기본 선택: S1 × L2
+leftKeys.add('S1xL2');   // 기본 LEFT: S1 × L2
+rightKeys.add('S2xL2');  // 기본 RIGHT: S2 × L2
+syncUI();
 </script>
 </body>
 </html>
