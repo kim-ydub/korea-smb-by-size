@@ -27,12 +27,18 @@ header p{font-size:.78rem;opacity:.65;margin-top:4px}
 /* ── 히트맵 ── */
 .heatmap{display:grid;grid-template-columns:108px repeat(4,1fr);gap:5px;margin-bottom:14px}
 .hm-corner{}
-.hm-col-hdr{text-align:center;padding:6px 4px 10px}
+.hm-col-hdr{text-align:center;padding:6px 4px 10px;cursor:pointer;border-radius:6px;
+            transition:background .12s}
+.hm-col-hdr:hover{background:var(--neutral-100)}
+.hm-col-hdr.hdr-selected{background:var(--neutral-100);outline:2px solid var(--neutral-700);outline-offset:-2px}
 .hm-col-hdr .wk{font-size:.88rem;font-weight:700;color:var(--neutral-900)}
 .hm-col-hdr .wlbl{font-size:.72rem;color:var(--neutral-700);display:block;margin-top:1px}
 .hm-col-hdr .wref{font-size:.65rem;color:var(--neutral-300);display:block;margin-top:2px}
 .hm-row-hdr{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
-            padding-right:10px;text-align:right;gap:2px}
+            padding-right:10px;text-align:right;gap:2px;cursor:pointer;border-radius:6px;
+            transition:background .12s}
+.hm-row-hdr:hover{background:var(--neutral-100)}
+.hm-row-hdr.hdr-selected{background:var(--neutral-100);outline:2px solid var(--neutral-700);outline-offset:-2px}
 .hm-row-hdr .lk{font-size:.82rem;font-weight:700;color:var(--neutral-900)}
 .hm-row-hdr .llbl{font-size:.66rem;color:var(--neutral-500);line-height:1.3}
 .hm-cell{border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;
@@ -88,7 +94,7 @@ footer{text-align:center;font-size:.72rem;color:var(--neutral-500);padding:16px}
   <!-- ── 히트맵 ── -->
   <div class="section">
     <div class="sec-title">세그먼트 히트맵 — 영업이익률 중앙값 (%)</div>
-    <div class="sec-sub">셀 클릭 시 하단 상세 패널 업데이트 | S3·S4는 핵심 타겟 외 참고용 (opacity 낮춤) | 매출 > 0 + 최소 표본 5개 이상</div>
+    <div class="sec-sub">셀 클릭으로 다중 선택/해제 | 행·열 헤더 클릭으로 전체 선택/해제 | S3·S4는 핵심 타겟 외 참고용 (opacity 낮춤)</div>
     <div id="heatmap" class="heatmap"></div>
     <div class="legend">
       <span>영업이익률:</span>
@@ -151,7 +157,7 @@ function buildHeatmap() {
   h += '<div></div>';
   workers.forEach((w, i) => {
     const ref = i >= 2 ? `<span class="wref">(참고용)</span>` : '';
-    h += `<div class="hm-col-hdr">
+    h += `<div id="col-hdr-${w}" class="hm-col-hdr" onclick="toggleColumn('${w}')">
       <span class="wk">${w}</span>
       <span class="wlbl">${wl[w]}</span>
       ${ref}
@@ -160,7 +166,7 @@ function buildHeatmap() {
 
   // 데이터 행 (L4→L1 순, 위=고매출)
   levels.forEach(l => {
-    h += `<div class="hm-row-hdr">
+    h += `<div id="row-hdr-${l}" class="hm-row-hdr" onclick="toggleRow('${l}')">
       <span class="lk">${l}</span>
       <span class="llbl">${ll[l]}</span>
     </div>`;
@@ -180,7 +186,7 @@ function buildHeatmap() {
       const { bg, text } = rateColor(seg.profit_rate);
       h += `<div id="cell-${w}-${l}" class="hm-cell${dim}"
         style="background:${bg};color:${text}"
-        onclick="selectCell('${key}','${w}','${l}')">
+        onclick="toggleCell('${key}')">
         <span class="rate">${seg.profit_rate.toFixed(1)}%</span>
         <span class="cnt">n=${seg.n}</span>
       </div>`;
@@ -190,32 +196,146 @@ function buildHeatmap() {
   document.getElementById('heatmap').innerHTML = h;
 }
 
-// ── 셀 선택 & 상세 업데이트 ──────────────────────────────────────────────────
+// ── 다중 선택 상태 ────────────────────────────────────────────────────────────
 let costChart = null, hardChart = null;
+const selectedKeys = new Set();
 
-function selectCell(key, w, l) {
-  // 선택 표시
-  document.querySelectorAll('.hm-cell.selected').forEach(el => el.classList.remove('selected'));
-  const cell = document.getElementById(`cell-${w}-${l}`);
-  if (cell) cell.classList.add('selected');
+function isSelectable(key) {
+  const seg = D.grid.segments[key];
+  return seg && seg.profit_rate != null;
+}
 
-  const seg  = D.grid.segments[key];
-  const wlbl = D.grid.worker_labels[w];
-  const llbl = D.grid.level_labels[l];
-  const isDim = w === 'S3' || w === 'S4';
+function getColumnKeys(w) {
+  return D.grid.levels.map(l => `${w}x${l}`).filter(isSelectable);
+}
 
-  // 제목 & 참고 노트
-  document.getElementById('detail-title').textContent =
-    `${w} × ${l} 상세 — ${wlbl} / ${llbl}`;
+function getRowKeys(l) {
+  return D.grid.workers.map(w => `${w}x${l}`).filter(isSelectable);
+}
+
+function toggleCell(key) {
+  if (!isSelectable(key)) return;
+  if (selectedKeys.has(key)) selectedKeys.delete(key);
+  else selectedKeys.add(key);
+  syncSelectionUI();
+  updateDetail();
+}
+
+function toggleColumn(w) {
+  const keys = getColumnKeys(w);
+  const allSelected = keys.length > 0 && keys.every(k => selectedKeys.has(k));
+  if (allSelected) keys.forEach(k => selectedKeys.delete(k));
+  else keys.forEach(k => selectedKeys.add(k));
+  syncSelectionUI();
+  updateDetail();
+}
+
+function toggleRow(l) {
+  const keys = getRowKeys(l);
+  const allSelected = keys.length > 0 && keys.every(k => selectedKeys.has(k));
+  if (allSelected) keys.forEach(k => selectedKeys.delete(k));
+  else keys.forEach(k => selectedKeys.add(k));
+  syncSelectionUI();
+  updateDetail();
+}
+
+function syncSelectionUI() {
+  // 셀
+  document.querySelectorAll('.hm-cell').forEach(el => el.classList.remove('selected'));
+  selectedKeys.forEach(key => {
+    const [w, l] = key.split('x');
+    const el = document.getElementById(`cell-${w}-${l}`);
+    if (el) el.classList.add('selected');
+  });
+  // 열 헤더
+  D.grid.workers.forEach(w => {
+    const hdr = document.getElementById(`col-hdr-${w}`);
+    if (!hdr) return;
+    const keys = getColumnKeys(w);
+    hdr.classList.toggle('hdr-selected', keys.length > 0 && keys.every(k => selectedKeys.has(k)));
+  });
+  // 행 헤더
+  D.grid.levels.forEach(l => {
+    const hdr = document.getElementById(`row-hdr-${l}`);
+    if (!hdr) return;
+    const keys = getRowKeys(l);
+    hdr.classList.toggle('hdr-selected', keys.length > 0 && keys.every(k => selectedKeys.has(k)));
+  });
+}
+
+// ── 상세 패널 업데이트 ────────────────────────────────────────────────────────
+function updateDetail() {
+  if (selectedKeys.size === 0) {
+    document.getElementById('detail-title').textContent = '— 세그먼트를 선택하세요';
+    document.getElementById('detail-cards').innerHTML = '';
+    document.getElementById('dim-note').style.display = 'none';
+    if (costChart) { costChart.destroy(); costChart = null; }
+    if (hardChart) { hardChart.destroy(); hardChart = null; }
+    return;
+  }
+
+  const segs = [...selectedKeys].map(k => D.grid.segments[k]);
+
+  // 제목
+  const titleStr = [...selectedKeys].sort().map(k => k.replace('x', '×')).join(', ');
+  const suffix = selectedKeys.size === 1 ? ' 상세' : ' 종합';
+  document.getElementById('detail-title').textContent = titleStr + suffix;
+
+  // ── 집계 ──
+  const totalN        = segs.reduce((a, s) => a + s.n, 0);
+  const totalWeighted = segs.reduce((a, s) => a + s.weighted, 0);
+
+  // 영업이익률: n 기준 가중평균
+  const vProfit = segs.filter(s => s.profit_rate != null);
+  const nProfit = vProfit.reduce((a, s) => a + s.n, 0);
+  const profit_rate = nProfit > 0
+    ? vProfit.reduce((a, s) => a + s.profit_rate * s.n, 0) / nProfit : null;
+
+  // 비용 구조: n 기준 가중평균
+  const CKEYS = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
+  const vCost = segs.filter(s => s.cost != null);
+  const nCost = vCost.reduce((a, s) => a + s.n, 0);
+  const cost = {};
+  CKEYS.forEach(k => {
+    cost[k] = nCost > 0
+      ? vCost.reduce((a, s) => a + (s.cost[k] ?? 0) * s.n, 0) / nCost : null;
+  });
+
+  // 애로사항: 셀별 값 합산 후 Top5 재정렬
+  const hardMap = {};
+  segs.forEach(s => {
+    if (!s.hardship) return;
+    s.hardship.labels.forEach((lbl, i) => {
+      hardMap[lbl] = (hardMap[lbl] || 0) + s.hardship.values[i];
+    });
+  });
+  const hardTop = Object.entries(hardMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const hardship = { labels: hardTop.map(e => e[0]), values: hardTop.map(e => e[1]) };
+
+  // 폐업 의향: n 기준 가중평균
+  const vClose = segs.filter(s => s.closure_pct != null);
+  const nClose = vClose.reduce((a, s) => a + s.n, 0);
+  const closure_pct = nClose > 0
+    ? vClose.reduce((a, s) => a + s.closure_pct * s.n, 0) / nClose : null;
+
+  // 매출 중앙값: n 기준 가중평균
+  const vSales = segs.filter(s => s.매출중앙 != null);
+  const nSales = vSales.reduce((a, s) => a + s.n, 0);
+  const 매출중앙 = nSales > 0
+    ? vSales.reduce((a, s) => a + s.매출중앙 * s.n, 0) / nSales : null;
+
+  // 참고 노트
+  const isDim = [...selectedKeys].some(k => k.startsWith('S3') || k.startsWith('S4'));
   document.getElementById('dim-note').style.display = isDim ? 'block' : 'none';
 
   // 카드
+  const unitLabel = selectedKeys.size > 1 ? 'n기준 가중평균' : '중앙값';
   const cards = [
-    { label: '표본 수',        value: comma(seg.n),            unit: '개' },
-    { label: '추정 사업체 수', value: comma(seg.weighted),     unit: '개 (가중치)' },
-    { label: '영업이익률',     value: pct(seg.profit_rate),    unit: '중앙값' },
-    { label: '매출 중앙값',    value: seg.매출중앙 != null ? comma(seg.매출중앙)+'백만' : '-', unit: '' },
-    { label: '폐업 의향',      value: pct(seg.closure_pct),    unit: '폐업+은퇴' },
+    { label: '표본 수',        value: comma(totalN),             unit: '개' },
+    { label: '추정 사업체 수', value: comma(totalWeighted),      unit: '개 (가중치)' },
+    { label: '영업이익률',     value: profit_rate != null ? profit_rate.toFixed(1)+'%' : '-', unit: unitLabel },
+    { label: '매출 중앙값',    value: 매출중앙 != null ? comma(Math.round(매출중앙))+'백만' : '-', unit: '' },
+    { label: '폐업 의향',      value: closure_pct != null ? closure_pct.toFixed(1)+'%' : '-', unit: unitLabel },
   ];
   document.getElementById('detail-cards').innerHTML = cards.map(c =>
     `<div class="card">
@@ -227,14 +347,12 @@ function selectCell(key, w, l) {
 
   // 비용 구조 차트
   if (costChart) costChart.destroy();
-  const costKeys = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
-  const costBg   = ['#587638','#95a961','#3a5630','#c4c4b8','#1e261b'];
-  const costVals = seg.cost ? costKeys.map(k => seg.cost[k] ?? 0) : Array(5).fill(0);
+  const costBg = ['#587638','#95a961','#3a5630','#c4c4b8','#1e261b'];
   costChart = new Chart(document.getElementById('c-cost'), {
     type: 'bar',
     data: {
-      labels: costKeys,
-      datasets: [{ data: costVals, backgroundColor: costBg, borderRadius: 4 }]
+      labels: CKEYS,
+      datasets: [{ data: CKEYS.map(k => cost[k] ?? 0), backgroundColor: costBg, borderRadius: 4 }]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -245,7 +363,8 @@ function selectCell(key, w, l) {
       scales: {
         x: { grid: { color:'#f2f2ed' },
              ticks: { callback: v => v+'%', font: { size:10 } },
-             title: { display:true, text:'% (중앙값)', color:'#6b6b62', font:{ size:10 } } },
+             title: { display:true, text: selectedKeys.size > 1 ? '% (n기준 가중평균)' : '% (중앙값)',
+                      color:'#6b6b62', font:{ size:10 } } },
         y: { grid: { display:false }, ticks: { font:{ size:11 } } }
       }
     }
@@ -253,12 +372,11 @@ function selectCell(key, w, l) {
 
   // 애로사항 차트
   if (hardChart) hardChart.destroy();
-  const hd = seg.hardship || { labels:[], values:[] };
   hardChart = new Chart(document.getElementById('c-hard'), {
     type: 'bar',
     data: {
-      labels: hd.labels,
-      datasets: [{ data: hd.values, backgroundColor: '#587638', borderRadius: 4 }]
+      labels: hardship.labels,
+      datasets: [{ data: hardship.values, backgroundColor: '#587638', borderRadius: 4 }]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -275,7 +393,7 @@ function selectCell(key, w, l) {
 
 // ── 초기화 ────────────────────────────────────────────────────────────────────
 buildHeatmap();
-selectCell('S1xL2', 'S1', 'L2');   // 기본 선택: S1 × L2
+toggleCell('S1xL2');   // 기본 선택: S1 × L2
 </script>
 </body>
 </html>
