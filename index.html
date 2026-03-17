@@ -298,11 +298,11 @@ function syncUI() {
   const hasDim = [...leftKeys, ...rightKeys].some(k => k.startsWith('S3') || k.startsWith('S4'));
   document.getElementById('dim-note').style.display = hasDim ? 'block' : 'none';
 
-  // 애로사항 x축 공유 최댓값 계산 (양쪽 Top5 중 최대)
+  // 애로사항 x축 공유 최댓값 계산 (%, 양쪽 최대 비율 기준)
   function hardMax(keysSet) {
     if (keysSet.size === 0) return 0;
     const agg = computeAggregate(keysSet);
-    return agg.hardTop.length > 0 ? Math.max(...agg.hardTop.map(e => e[1])) : 0;
+    return agg.hardAll.length > 0 ? Math.max(...agg.hardAll.map(e => e.rate)) : 0;
   }
   sharedHardMax = Math.max(hardMax(leftKeys), hardMax(rightKeys));
 
@@ -325,19 +325,22 @@ function computeAggregate(keysSet) {
   const cost = {};
   CKEYS.forEach(k => { cost[k] = nC > 0 ? vC.reduce((a, s) => a + (s.cost[k] ?? 0) * s.n, 0) / nC : null; });
 
+  // 애로사항: counts 합산 → 결합 n 기준 비율 재계산
   const hardMap = {};
   segs.forEach(s => {
     if (!s.hardship) return;
-    s.hardship.labels.forEach((lbl, i) => { hardMap[lbl] = (hardMap[lbl] || 0) + s.hardship.values[i]; });
+    s.hardship.labels.forEach((lbl, i) => { hardMap[lbl] = (hardMap[lbl] || 0) + s.hardship.counts[i]; });
   });
-  const hardTop = Object.entries(hardMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const hardAll = Object.entries(hardMap)
+    .map(([lbl, cnt]) => ({ label: lbl, rate: totalN > 0 ? Math.round(cnt / totalN * 1000) / 10 : 0, count: cnt }))
+    .sort((a, b) => b.rate - a.rate);
 
   const vCl = segs.filter(s => s.closure_pct != null);
   const nCl = vCl.reduce((a, s) => a + s.n, 0);
   const closure_pct = nCl > 0 ? vCl.reduce((a, s) => a + s.closure_pct * s.n, 0) / nCl : null;
 
   const titleKeys = [...keysSet].sort().map(k => k.replace('x', '×')).join(', ');
-  return { totalN, totalWeighted, profit_rate, cost, hardTop, closure_pct, titleKeys };
+  return { totalN, totalWeighted, profit_rate, cost, hardAll, closure_pct, titleKeys };
 }
 
 // ── 패널 렌더 ─────────────────────────────────────────────────────────────────
@@ -393,8 +396,8 @@ function updatePanel(side) {
     <table class="stat-table">${rows}</table>
     <div class="chart-title">비용 구조 (%)</div>
     <div class="chart-wrap"><canvas id="c-cost-${side}"></canvas></div>
-    <div class="chart-title" style="margin-top:12px">경영 애로사항 Top 5</div>
-    <div class="chart-wrap"><canvas id="c-hard-${side}"></canvas></div>`;
+    <div class="chart-title" style="margin-top:12px">경영 애로사항 (9개 항목, %)</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="c-hard-${side}"></canvas></div>`;
 
   const hardColor = side === 'left' ? '#587638' : '#b45309';
 
@@ -411,14 +414,22 @@ function updatePanel(side) {
     }
   });
 
+  const hardLabels = agg.hardAll.map(e => e.label);
+  const hardRates  = agg.hardAll.map(e => e.rate);
+  const hardCounts = agg.hardAll.map(e => e.count);
+  const hardN      = agg.totalN;
+
   panelCharts[side].hard = new Chart(document.getElementById(`c-hard-${side}`), {
     type: 'bar',
-    data: { labels: agg.hardTop.map(e => e[0]), datasets: [{ data: agg.hardTop.map(e => e[1]), backgroundColor: hardColor, borderRadius: 4 }] },
+    data: { labels: hardLabels, datasets: [{ data: hardRates, backgroundColor: hardColor, borderRadius: 4 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.x.toFixed(1)}% (${hardCounts[ctx.dataIndex]}건 / ${hardN}명)` } }
+      },
       scales: {
-        x: { min: 0, max: sharedHardMax || 1, grid: { color:'#f2f2ed' }, ticks: { font:{ size:10 } } },
+        x: { min: 0, max: sharedHardMax || 1, grid: { color:'#f2f2ed' }, ticks: { callback: v => v+'%', font:{ size:10 } } },
         y: { grid: { display:false }, ticks: { font:{ size:10 } } }
       }
     }
