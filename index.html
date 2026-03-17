@@ -174,6 +174,7 @@ let activeMode = 'left';
 const leftKeys  = new Set();
 const rightKeys = new Set();
 const panelCharts = { left: {}, right: {} };
+let sharedHardMax = 0;
 
 // ── 모드 전환 ─────────────────────────────────────────────────────────────────
 function setMode(mode) {
@@ -297,6 +298,14 @@ function syncUI() {
   const hasDim = [...leftKeys, ...rightKeys].some(k => k.startsWith('S3') || k.startsWith('S4'));
   document.getElementById('dim-note').style.display = hasDim ? 'block' : 'none';
 
+  // 애로사항 x축 공유 최댓값 계산 (양쪽 Top5 중 최대)
+  function hardMax(keysSet) {
+    if (keysSet.size === 0) return 0;
+    const agg = computeAggregate(keysSet);
+    return agg.hardTop.length > 0 ? Math.max(...agg.hardTop.map(e => e[1])) : 0;
+  }
+  sharedHardMax = Math.max(hardMax(leftKeys), hardMax(rightKeys));
+
   updatePanel('left');
   updatePanel('right');
 }
@@ -396,7 +405,7 @@ function updatePanel(side) {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` } } },
       scales: {
-        x: { grid: { color:'#f2f2ed' }, ticks: { callback: v => v+'%', font:{ size:10 } } },
+        x: { min: 0, max: 100, grid: { color:'#f2f2ed' }, ticks: { callback: v => v+'%', font:{ size:10 } } },
         y: { grid: { display:false }, ticks: { font:{ size:10 } } }
       }
     }
@@ -409,7 +418,7 @@ function updatePanel(side) {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { grid: { color:'#f2f2ed' }, ticks: { font:{ size:10 } } },
+        x: { min: 0, max: sharedHardMax || 1, grid: { color:'#f2f2ed' }, ticks: { font:{ size:10 } } },
         y: { grid: { display:false }, ticks: { font:{ size:10 } } }
       }
     }
