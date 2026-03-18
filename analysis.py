@@ -218,9 +218,34 @@ if CLOSURE_COL in pos.columns:
         cnt = int((pos[CLOSURE_COL] == code).sum())
         closure_dist_all[lbl] = {"n": cnt, "pct": round(cnt / total_c * 100, 1)}
 
+# 영업이익률 구간 분포
+PR_DIST_BINS   = [-np.inf, 0, 10, 20, 30, 40, np.inf]
+PR_DIST_LABELS = ["0% 미만", "0~10%", "10~20%", "20~30%", "30~40%", "40%+"]
+pos["이익률구간"] = pd.cut(pos["영업이익률"], bins=PR_DIST_BINS, labels=PR_DIST_LABELS, right=True)
+pr_dist = [
+    {"label": lbl, "n": int((pos["이익률구간"] == lbl).sum()),
+     "pct": round(float((pos["이익률구간"] == lbl).mean() * 100), 1),
+     "weighted": int(round(pos.loc[pos["이익률구간"] == lbl, "사업체수가중값"].sum()))}
+    for lbl in PR_DIST_LABELS
+]
+
+# 월 영업이익 구간 분포 (만원 = 백만원 × 100 ÷ 12)
+pos["월영업이익_만원"] = pos["경영_영업이익"] * 100 / 12
+MP_DIST_BINS   = [-np.inf, 0, 100, 200, 300, 500, np.inf]
+MP_DIST_LABELS = ["0만 미만", "0~100만", "100~200만", "200~300만", "300~500만", "500만+"]
+pos["월이익구간"] = pd.cut(pos["월영업이익_만원"], bins=MP_DIST_BINS, labels=MP_DIST_LABELS, right=True)
+mp_dist = [
+    {"label": lbl, "n": int((pos["월이익구간"] == lbl).sum()),
+     "pct": round(float((pos["월이익구간"] == lbl).mean() * 100), 1),
+     "weighted": int(round(pos.loc[pos["월이익구간"] == lbl, "사업체수가중값"].sum()))}
+    for lbl in MP_DIST_LABELS
+]
+
 sec1 = {
     "overview":     overall,
     "rev_dist":     rev_dist,
+    "pr_dist":      pr_dist,
+    "mp_dist":      mp_dist,
     "size_dist":    size_dist,
     "closure_dist": closure_dist_all,
     "hardship":     cnt_hard(pos),
