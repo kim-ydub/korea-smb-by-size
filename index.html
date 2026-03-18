@@ -136,12 +136,14 @@ header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
         <div class="chart-wrap" style="height:180px"><canvas id="ch-size-dist"></canvas></div>
       </div>
       <div>
-        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-          <button class="mtbtn active" id="dist-btn-pr">영업이익률</button>
-          <button class="mtbtn" id="dist-btn-mp">월 영업이익</button>
-          <button class="mtbtn" id="dist-btn-ms">월 매출</button>
+        <div class="chart-title-row">
+          <div class="chart-title" id="dist-title">영업이익률 구간 분포</div>
+          <div class="metric-toggle">
+            <button class="mtbtn active" id="dist-btn-pr">영업이익률</button>
+            <button class="mtbtn" id="dist-btn-mp">월 영업이익</button>
+            <button class="mtbtn" id="dist-btn-ms">월 매출</button>
+          </div>
         </div>
-        <div class="chart-title" id="dist-title">영업이익률 구간 분포</div>
         <div class="chart-wrap" style="height:180px"><canvas id="ch-rev-dist"></canvas></div>
       </div>
     </div>
@@ -266,12 +268,10 @@ header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
     <div class="section-title">⑥ 창업경험 × 운영연수</div>
     <div class="section-desc">창업 경험과 운영 연수에 따른 성과 패턴</div>
     <p class="sec-insight">💡 2회 창업자는 면적 크고 동종경험 보유율 높음 — 학습 후 스케일업 패턴 (생존편향 주의)</p>
+    <div class="metric-toggle" id="toggle-sec6" style="margin-bottom:16px"></div>
     <div class="grid-2" style="margin-bottom:20px">
       <div>
-        <div class="chart-title-row">
-          <div class="chart-title" id="ch-tenure-title">운영연수별 영업이익률</div>
-          <div class="metric-toggle" id="toggle-sec6"></div>
-        </div>
+        <div class="chart-title" id="ch-tenure-title">운영연수별 영업이익률</div>
         <div class="chart-wrap" style="height:200px"><canvas id="ch-tenure-profit"></canvas></div>
       </div>
       <div>
