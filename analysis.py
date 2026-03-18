@@ -276,7 +276,7 @@ print("섹션 3: 규모×고용형태 집계…")
 cells_se = {}
 for sz in SIZE_ORDER:
     for em in EMP_ORDER:
-        cells_se[f"{sz}x{em}"] = seg_stats(pos[(pos["종사자규모"] == sz) & (pos["고용형태"] == em)])
+        cells_se[f"{sz}x{em}"] = seg_stats(pos[(pos["종사자규모"] == sz) & (pos["고용형태"] == em)], min_n=10)
 
 sec3 = {
     "size_order": SIZE_ORDER,
