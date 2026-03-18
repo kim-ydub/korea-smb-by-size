@@ -3,444 +3,716 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2023 소상공인 대시보드 — 16세그먼트</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<title>2023 음식점업 소상공인 실태 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root {
-  --green-1:#1e261b; --green-2:#3a5630; --green-3:#587638;
-  --green-4:#95a961; --green-5:#edf3a9;
-  --neutral-900:#1a1a18; --neutral-700:#3d3d38; --neutral-500:#6b6b62;
-  --neutral-300:#c4c4b8; --neutral-100:#f2f2ed; --neutral-0:#ffffff;
-  --amber:#b45309;
+  --green-1: #1e261b;
+  --green-2: #3a5630;
+  --green-3: #587638;
+  --green-4: #95a961;
+  --green-5: #edf3a9;
+  --neutral-900: #1a1a18;
+  --neutral-700: #3d3d38;
+  --neutral-500: #6b6b62;
+  --neutral-300: #c4c4b8;
+  --neutral-100: #f2f2ed;
+  --neutral-0: #ffffff;
+  --amber: #b45309;
+  --red: #991b1b;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
-     background:var(--neutral-100);color:var(--neutral-900);font-size:14px;line-height:1.6}
-header{background:var(--green-1);color:var(--green-5);padding:20px 32px}
-header h1{font-size:1.3rem;font-weight:700;color:var(--green-5);line-height:1.3}
-header p{font-size:.78rem;opacity:.65;margin-top:4px}
-.container{max-width:1200px;margin:0 auto;padding:20px 16px}
-.section{background:var(--neutral-0);border-radius:12px;padding:22px 24px;
-         margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
-.sec-title{font-size:1rem;font-weight:700;color:var(--neutral-900);margin-bottom:3px;line-height:1.3}
-.sec-sub{font-size:.75rem;color:var(--neutral-500);margin-bottom:14px}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  background: var(--neutral-100);
+  color: var(--neutral-900);
+  font-size: 14px;
+  line-height: 1.6;
+}
 
-/* ── 모드 토글 ── */
-.mode-toggle{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.mode-label{font-size:.8rem;color:var(--neutral-500)}
-.mode-btn{padding:5px 18px;border-radius:20px;font-size:.82rem;font-weight:600;
-          cursor:pointer;border:2px solid var(--neutral-300);
-          background:var(--neutral-100);color:var(--neutral-500);transition:all .15s}
-.mode-btn.active-left {background:var(--green-2);color:#fff;border-color:var(--green-2)}
-.mode-btn.active-right{background:var(--amber); color:#fff;border-color:var(--amber)}
+/* ── Layout ── */
+header {
+  background: var(--green-1);
+  color: var(--neutral-0);
+  padding: 20px 24px;
+}
+header h1 { font-size: 20px; font-weight: 700; }
+header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+.section {
+  background: var(--neutral-0);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--green-1);
+  margin-bottom: 4px;
+}
+.section-desc {
+  font-size: 13px;
+  color: var(--neutral-500);
+  margin-bottom: 20px;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 
-/* ── 히트맵 ── */
-.heatmap{display:grid;grid-template-columns:108px repeat(4,1fr);gap:5px;margin-bottom:14px}
-.hm-col-hdr{text-align:center;padding:6px 4px 10px;cursor:pointer;border-radius:6px;transition:background .12s}
-.hm-col-hdr:hover{background:var(--neutral-100)}
-.hm-col-hdr.hdr-left-selected {background:rgba(58,86,48,.12);outline:2px solid var(--green-2);outline-offset:-2px}
-.hm-col-hdr.hdr-right-selected{background:rgba(180,83,9,.10); outline:2px solid var(--amber);  outline-offset:-2px}
-.hm-col-hdr .wk  {font-size:.88rem;font-weight:700;color:var(--neutral-900)}
-.hm-col-hdr .wlbl{font-size:.72rem;color:var(--neutral-700);display:block;margin-top:1px}
-.hm-col-hdr .wref{font-size:.65rem;color:var(--neutral-300);display:block;margin-top:2px}
-.hm-row-hdr{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
-            padding-right:10px;text-align:right;gap:2px;cursor:pointer;border-radius:6px;transition:background .12s}
-.hm-row-hdr:hover{background:var(--neutral-100)}
-.hm-row-hdr.hdr-left-selected {background:rgba(58,86,48,.12);outline:2px solid var(--green-2);outline-offset:-2px}
-.hm-row-hdr.hdr-right-selected{background:rgba(180,83,9,.10); outline:2px solid var(--amber);  outline-offset:-2px}
-.hm-row-hdr .lk  {font-size:.82rem;font-weight:700;color:var(--neutral-900)}
-.hm-row-hdr .llbl{font-size:.66rem;color:var(--neutral-500);line-height:1.3}
-.hm-cell{border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;
-         transition:all .15s;border:2px solid transparent;min-height:72px;position:relative;
-         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.hm-cell:hover{transform:scale(1.04);box-shadow:0 2px 8px rgba(30,38,27,.18)}
-.hm-cell.sel-left {border-color:var(--green-2)!important;box-shadow:0 0 0 3px rgba(58,86,48,.28)}
-.hm-cell.sel-right{border-color:var(--amber)!important; box-shadow:0 0 0 3px rgba(180,83,9,.22)}
-.hm-cell.dim{opacity:.35}
-.hm-cell.dim:hover{opacity:.65}
-.hm-cell .rate{font-size:1.05rem;font-weight:700;line-height:1}
-.hm-cell .cnt {font-size:.65rem;opacity:.75;margin-top:1px}
-.hm-cell.empty{background:var(--neutral-100)!important;cursor:default}
-.hm-cell.empty:hover{transform:none;box-shadow:none}
-.hm-badge{position:absolute;font-size:.58rem;font-weight:700;padding:1px 4px;
-          border-radius:3px;line-height:1.5;pointer-events:none}
-.hm-badge.badge-l{top:3px;left:3px; background:var(--green-2);color:#fff}
-.hm-badge.badge-r{top:3px;right:3px;background:var(--amber); color:#fff}
+/* ── KPI cards ── */
+.kpi-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.kpi-card {
+  background: var(--neutral-100);
+  border-radius: 6px;
+  padding: 12px 16px;
+  flex: 1;
+  min-width: 130px;
+}
+.kpi-label { font-size: 12px; color: var(--neutral-500); margin-bottom: 4px; }
+.kpi-value { font-size: 22px; font-weight: 700; color: var(--green-2); }
+.kpi-sub   { font-size: 11px; color: var(--neutral-500); margin-top: 2px; }
 
-/* ── 범례 ── */
-.legend{display:flex;align-items:center;gap:10px;font-size:.72rem;color:var(--neutral-500);flex-wrap:wrap;margin-top:4px}
-.lg-item{display:flex;align-items:center;gap:4px}
-.lg-box{width:22px;height:13px;border-radius:3px;flex-shrink:0}
+/* ── Chart containers ── */
+.chart-wrap { position: relative; }
+.chart-title { font-size: 13px; font-weight: 600; color: var(--neutral-700); margin-bottom: 8px; }
 
-/* ── 2패널 비교 ── */
-.two-panel{display:grid;grid-template-columns:1fr 1fr;gap:0;
-           border:1px solid var(--neutral-300);border-radius:10px;overflow:hidden}
-@media(max-width:720px){.two-panel{grid-template-columns:1fr}}
-.panel{padding:20px;min-width:0}
-.panel-left{border-right:1px solid var(--neutral-300)}
-.panel-header{margin-bottom:12px}
-.panel-title{font-size:.82rem;font-weight:700;padding:3px 12px;border-radius:16px;display:inline-block;margin-bottom:4px}
-.panel-title.left {background:var(--green-2);color:#fff}
-.panel-title.right{background:var(--amber); color:#fff}
-.panel-keys{font-size:.72rem;color:var(--neutral-500);line-height:1.5}
-.panel-empty{display:flex;align-items:center;justify-content:center;min-height:160px;
-             font-size:.85rem;color:var(--neutral-300)}
+/* ── Cross-tab ── */
+.xtab-wrap { overflow-x: auto; }
+.xtab { border-collapse: collapse; width: 100%; font-size: 13px; }
+.xtab th, .xtab td {
+  border: 1px solid var(--neutral-300);
+  padding: 8px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+.xtab thead th { background: var(--neutral-100); color: var(--neutral-700); font-weight: 600; }
+.xtab tbody th { background: var(--neutral-100); color: var(--neutral-700); font-weight: 600; text-align: left; }
+.xtab td.has-data:hover { background: var(--green-5); }
+.cell-profit { font-size: 15px; font-weight: 700; }
+.cell-n      { font-size: 11px; color: var(--neutral-500); margin-top: 2px; }
 
-/* ── 스탯 테이블 ── */
-.stat-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:.82rem}
-.stat-table tr{border-bottom:1px solid var(--neutral-100)}
-.stat-table td{padding:5px 2px;vertical-align:middle}
-.st-label{color:var(--neutral-500);width:40%}
-.st-val  {font-weight:700;color:var(--green-3);text-align:right;width:30%}
-.st-delta{text-align:right;width:30%;font-size:.75rem;font-weight:600}
-.st-delta.pos{color:#16a34a}
-.st-delta.neg{color:#dc2626}
-.st-delta.neu{color:var(--neutral-300)}
+/* ── Profit rate colors ── */
+.pr-none  { color: var(--neutral-300); }
+.pr-low   { color: var(--red); }
+.pr-mid1  { color: var(--amber); }
+.pr-mid2  { color: var(--neutral-700); }
+.pr-good  { color: var(--green-3); }
+.pr-great { color: var(--green-2); }
 
-/* ── 차트 ── */
-.chart-title{font-size:.78rem;font-weight:600;color:var(--neutral-700);margin-bottom:6px}
-.chart-wrap{position:relative;height:200px}
+/* ── Section nav ── */
+.sec-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.sec-nav a {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--neutral-100);
+  color: var(--neutral-700);
+  text-decoration: none;
+  font-size: 13px;
+  border: 1px solid var(--neutral-300);
+}
+.sec-nav a:hover { background: var(--green-5); border-color: var(--green-4); color: var(--green-1); }
+.divider { border: none; border-top: 1px solid var(--neutral-100); margin: 20px 0; }
 
-/* ── 참고 노트 ── */
-.dim-note{margin-top:14px;padding:10px 14px;background:#fef3c7;
-          border:1px solid #fde68a;border-radius:8px;font-size:.78rem;color:#92400e;display:none}
-footer{text-align:center;font-size:.72rem;color:var(--neutral-500);padding:16px}
+@media (max-width: 720px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .kpi-card { min-width: 100px; }
+}
 </style>
 </head>
 <body>
-
 <header>
-  <h1>2023 소상공인 실태조사 — 16세그먼트 대시보드</h1>
-  <p>숙박·음식점업(I) | 종사자 S1~S4 × 매출 L1~L4 | 중소벤처기업부·소상공인시장진흥공단 | 금액 단위: 백만원</p>
+  <h1>2023 음식점업 소상공인 실태 분석</h1>
+  <p>출처: 중소벤처기업부·소상공인시장진흥공단 2023년 소상공인실태조사 (산업중분류 56 음식점업) | 금액 단위: 만원</p>
 </header>
 
 <div class="container">
+  <nav class="sec-nav">
+    <a href="#sec1">① 산업 개요</a>
+    <a href="#sec2">② 비용구조</a>
+    <a href="#sec3">③ 규모×고용형태</a>
+    <a href="#sec4">④ 프랜차이즈×고용형태</a>
+    <a href="#sec5">⑤ 연령대</a>
+    <a href="#sec6">⑥ 창업경험×운영연수</a>
+    <a href="#sec7">⑦ 지역분석</a>
+  </nav>
 
-  <!-- ── 히트맵 ── -->
-  <div class="section">
-    <div class="sec-title">세그먼트 히트맵 — 영업이익률 중앙값 (%)</div>
-    <div class="sec-sub">LEFT · RIGHT 모드 전환 후 셀 클릭으로 담기 | 행·열 헤더 클릭으로 전체 선택 | S3·S4 참고용</div>
-    <div class="mode-toggle">
-      <span class="mode-label">선택 모드:</span>
-      <button id="btn-left"  class="mode-btn active-left"  onclick="setMode('left')">● LEFT</button>
-      <button id="btn-right" class="mode-btn"              onclick="setMode('right')">○ RIGHT</button>
+  <!-- ① 산업 개요 -->
+  <section class="section" id="sec1">
+    <div class="section-title">① 산업 개요</div>
+    <div class="section-desc">음식점업(산업중분류 56) 표본 전체 기준. 매출 &gt; 0 인 행 기준으로 비율 지표 산출.</div>
+    <div class="kpi-row" id="kpi-overview"></div>
+    <div class="grid-2">
+      <div>
+        <div class="chart-title">종사자 규모 분포</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="ch-size-dist"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">매출 구간 분포</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="ch-rev-dist"></canvas></div>
+      </div>
     </div>
-    <div id="heatmap" class="heatmap"></div>
-    <div class="legend">
-      <span>영업이익률:</span>
-      <div class="lg-item"><div class="lg-box" style="background:#edf3a9;border:1px solid #c4c4b8"></div><span>~10%</span></div>
-      <div class="lg-item"><div class="lg-box" style="background:#95a961"></div><span>10~20%</span></div>
-      <div class="lg-item"><div class="lg-box" style="background:#587638"></div><span>20~30%</span></div>
-      <div class="lg-item"><div class="lg-box" style="background:#3a5630"></div><span>30~40%</span></div>
-      <div class="lg-item"><div class="lg-box" style="background:#1e261b"></div><span>40%+</span></div>
+    <hr class="divider">
+    <div class="grid-2">
+      <div>
+        <div class="chart-title">향후 운영계획 (전체)</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="ch-closure"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">경영 애로사항 Top9 (전체)</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="ch-hard-all"></canvas></div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <!-- ── 2패널 비교 ── -->
-  <div class="section">
-    <div class="sec-title">LEFT / RIGHT 세그먼트 비교</div>
-    <div class="sec-sub">비용율·이익율: n기준 가중평균 | 애로사항: 합산 후 Top5 | ▲▼는 RIGHT − LEFT 차이</div>
-    <div class="two-panel">
-      <div class="panel panel-left"  id="panel-left"></div>
-      <div class="panel panel-right" id="panel-right"></div>
+  <!-- ② 비용구조 -->
+  <section class="section" id="sec2">
+    <div class="section-title">② 비용구조</div>
+    <div class="section-desc">원가율·인건비율·임차료율·기타비용율·영업이익률 (각 중앙값). 매출구간 × 종사자규모 교차 탐색.</div>
+    <div class="grid-2">
+      <div>
+        <div class="chart-title">종사자규모별 비용구조 (중앙값 누적)</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="ch-cost-size"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">매출구간별 비용구조 (중앙값 누적)</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="ch-cost-rev"></canvas></div>
+      </div>
     </div>
-    <div id="dim-note" class="dim-note">
-      ⚠ S3·S4는 핵심 타겟(소규모 1~3명) 외 참고용 세그먼트입니다.
+    <hr class="divider">
+    <div class="chart-title" style="margin-bottom:12px">매출구간 × 종사자규모 — 영업이익률 중앙값</div>
+    <div class="xtab-wrap">
+      <table class="xtab" id="xtab-cost"></table>
     </div>
-  </div>
+  </section>
 
+  <!-- ③ 규모×고용형태 -->
+  <section class="section" id="sec3">
+    <div class="section-title">③ 종사자규모 × 고용형태</div>
+    <div class="section-desc">장기중심 = 1년이상 계약 ≥ 단기계약 / 단기중심 = 3개월미만 계약이 더 많음 / 해당없음 = 종업원 고용 없음.</div>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div>
+        <div class="chart-title">규모별 고용형태 구성 비율</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-emp-dist"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">규모 × 고용형태별 영업이익률</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-size-emp-profit"></canvas></div>
+      </div>
+    </div>
+    <div class="xtab-wrap">
+      <table class="xtab" id="xtab-size-emp"></table>
+    </div>
+  </section>
+
+  <!-- ④ 프랜차이즈×고용형태 -->
+  <section class="section" id="sec4">
+    <div class="section-title">④ 프랜차이즈 × 고용형태</div>
+    <div class="section-desc">프랜차이즈 가맹 여부(1=예)와 고용형태 교차 분석.</div>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div>
+        <div class="chart-title">프랜차이즈×고용형태별 영업이익률</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-fran-profit"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">프랜차이즈×고용형태별 폐업의향</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-fran-closure"></canvas></div>
+      </div>
+    </div>
+    <div class="xtab-wrap">
+      <table class="xtab" id="xtab-fran-emp"></table>
+    </div>
+  </section>
+
+  <!-- ⑤ 연령대 -->
+  <section class="section" id="sec5">
+    <div class="section-title">⑤ 대표자 연령대</div>
+    <div class="section-desc">연령대별 영업이익률·폐업의향·주요 애로사항 비교.</div>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div>
+        <div class="chart-title">연령대별 영업이익률 중앙값</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-age-profit"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">연령대별 폐업의향 (%)</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-age-closure"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <div class="chart-title">연령대별 주요 애로사항 — 원재료비 / 보증금·월세 / 동일업종 경쟁</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ch-age-hard"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ⑥ 창업경험×운영연수 -->
+  <section class="section" id="sec6">
+    <div class="section-title">⑥ 창업경험 × 운영연수</div>
+    <div class="section-desc">창업횟수(1·2·3회+)와 운영연수 구간 교차. 운영연수 = 2023 − 창업·인수 연도.</div>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div>
+        <div class="chart-title">운영연수별 영업이익률</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-tenure-profit"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">창업횟수별 영업이익률</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-startup-profit"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-title" style="margin-bottom:12px">창업횟수 × 운영연수 — 영업이익률 중앙값</div>
+    <div class="xtab-wrap">
+      <table class="xtab" id="xtab-startup-tenure"></table>
+    </div>
+  </section>
+
+  <!-- ⑦ 지역분석 -->
+  <section class="section" id="sec7">
+    <div class="section-title">⑦ 지역분석</div>
+    <div class="section-desc">수도권(서울·인천·경기) / 광역시(부산·대구·광주·대전·울산) / 기타 지역 비교.</div>
+    <div class="grid-3" style="margin-bottom:20px">
+      <div>
+        <div class="chart-title">지역별 영업이익률</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-region-profit"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">지역별 폐업의향</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-region-closure"></canvas></div>
+      </div>
+      <div>
+        <div class="chart-title">지역별 표본 분포</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ch-region-dist"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <div class="chart-title">지역별 주요 애로사항 — 원재료비 / 보증금·월세 / 상권 쇠퇴</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ch-region-hard"></canvas></div>
+    </div>
+  </section>
 </div>
-<footer>중소벤처기업부·소상공인시장진흥공단, 2023년 소상공인실태조사 ｜ 기준일: 2023.12.31 ｜ 표본 40,000개</footer>
 
 <script>
-const D = {"grid": {"workers": ["S1", "S2", "S3", "S4"], "worker_labels": {"S1": "1명", "S2": "2~3명", "S3": "4~9명", "S4": "10명+"}, "levels": ["L4", "L3", "L2", "L1"], "level_labels": {"L4": "1.2억+", "L3": "7,200만~1.2억", "L2": "3,600만~7,200만", "L1": "~3,600만"}, "segments": {"S1xL4": {"n": 196, "weighted": 107498, "profit_rate": 29.6, "cost": {"원가율": 44.6, "인건비율": 0.0, "임차료율": 7.9, "기타비용율": 5.4, "영업이익률": 29.6}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [66.8, 60.7, 37.8, 31.1, 15.3, 11.7, 7.1, 6.1, 1.5], "counts": [131, 119, 74, 61, 30, 23, 14, 12, 3]}, "closure_pct": 2.0, "매출중앙": 160}, "S1xL3": {"n": 240, "weighted": 108925, "profit_rate": 26.7, "cost": {"원가율": 45.1, "인건비율": 0.0, "임차료율": 9.3, "기타비용율": 6.9, "영업이익률": 26.7}, "hardship": {"labels": ["동일업종 경쟁", "원재료비", "상권 쇠퇴", "보증금·월세", "부채상환", "최저임금(인건비)", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [64.6, 56.2, 38.3, 27.1, 16.2, 10.4, 6.2, 5.0, 2.9], "counts": [155, 135, 92, 65, 39, 25, 15, 12, 7]}, "closure_pct": 4.6, "매출중앙": 90}, "S1xL2": {"n": 357, "weighted": 104996, "profit_rate": 30.0, "cost": {"원가율": 38.3, "인건비율": 0.0, "임차료율": 8.5, "기타비용율": 8.6, "영업이익률": 30.0}, "hardship": {"labels": ["동일업종 경쟁", "상권 쇠퇴", "원재료비", "보증금·월세", "부채상환", "판로개척(온라인)", "최저임금(인건비)", "인력관리", "디지털 기술도입"], "rates": [65.0, 41.7, 41.2, 19.9, 12.6, 12.0, 10.6, 6.7, 2.5], "counts": [232, 149, 147, 71, 45, 43, 38, 24, 9]}, "closure_pct": 3.9, "매출중앙": 50}, "S1xL1": {"n": 537, "weighted": 81357, "profit_rate": 33.3, "cost": {"원가율": 25.0, "인건비율": 0.0, "임차료율": 0.0, "기타비용율": 18.2, "영업이익률": 33.3}, "hardship": {"labels": ["동일업종 경쟁", "상권 쇠퇴", "원재료비", "부채상환", "판로개척(온라인)", "보증금·월세", "최저임금(인건비)", "인력관리", "디지털 기술도입"], "rates": [63.3, 46.6, 30.9, 17.5, 16.6, 13.0, 9.1, 7.4, 1.5], "counts": [340, 250, 166, 94, 89, 70, 49, 40, 8]}, "closure_pct": 5.8, "매출중앙": 17}, "S2xL4": {"n": 365, "weighted": 194289, "profit_rate": 20.0, "cost": {"원가율": 43.9, "인건비율": 18.7, "임차료율": 6.5, "기타비용율": 5.0, "영업이익률": 20.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "최저임금(인건비)", "보증금·월세", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [66.3, 57.5, 32.6, 29.3, 28.8, 15.1, 12.3, 7.4, 0.8], "counts": [242, 210, 119, 107, 105, 55, 45, 27, 3]}, "closure_pct": 1.9, "매출중앙": 200}, "S2xL3": {"n": 142, "weighted": 73234, "profit_rate": 21.6, "cost": {"원가율": 37.5, "인건비율": 18.2, "임차료율": 10.1, "기타비용율": 7.0, "영업이익률": 21.6}, "hardship": {"labels": ["동일업종 경쟁", "원재료비", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [61.3, 56.3, 38.0, 28.2, 19.0, 11.3, 9.2, 8.5, 0.0], "counts": [87, 80, 54, 40, 27, 16, 13, 12, 0]}, "closure_pct": 6.3, "매출중앙": 94}, "S2xL2": {"n": 127, "weighted": 48456, "profit_rate": 29.2, "cost": {"원가율": 36.7, "인건비율": 0.0, "임차료율": 5.1, "기타비용율": 8.6, "영업이익률": 29.2}, "hardship": {"labels": ["동일업종 경쟁", "상권 쇠퇴", "원재료비", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [60.6, 46.5, 41.7, 15.0, 13.4, 13.4, 11.0, 8.7, 0.8], "counts": [77, 59, 53, 19, 17, 17, 14, 11, 1]}, "closure_pct": 6.3, "매출중앙": 52}, "S2xL1": {"n": 105, "weighted": 25221, "profit_rate": 19.1, "cost": {"원가율": 25.9, "인건비율": 0.0, "임차료율": 0.0, "기타비용율": 19.2, "영업이익률": 19.1}, "hardship": {"labels": ["동일업종 경쟁", "상권 쇠퇴", "원재료비", "부채상환", "보증금·월세", "판로개척(온라인)", "최저임금(인건비)", "인력관리", "디지털 기술도입"], "rates": [61.9, 50.5, 27.6, 16.2, 13.3, 13.3, 5.7, 1.9, 0.0], "counts": [65, 53, 29, 17, 14, 14, 6, 2, 0]}, "closure_pct": 2.9, "매출중앙": 20}, "S3xL4": {"n": 78, "weighted": 39552, "profit_rate": 16.3, "cost": {"원가율": 42.3, "인건비율": 28.7, "임차료율": 4.1, "기타비용율": 3.8, "영업이익률": 16.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "상권 쇠퇴", "보증금·월세", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [55.1, 43.6, 34.6, 26.9, 20.5, 16.7, 16.7, 7.7, 0.0], "counts": [43, 34, 27, 21, 16, 13, 13, 6, 0]}, "closure_pct": 1.3, "매출중앙": 321}, "S3xL3": {"n": 8, "weighted": 2241, "profit_rate": 26.8, "cost": {"원가율": 30.1, "인건비율": 26.9, "임차료율": 1.8, "기타비용율": 8.7, "영업이익률": 26.8}, "hardship": {"labels": ["동일업종 경쟁", "상권 쇠퇴", "원재료비", "인력관리", "최저임금(인건비)", "보증금·월세", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [75.0, 50.0, 37.5, 37.5, 25.0, 12.5, 12.5, 0.0, 0.0], "counts": [6, 4, 3, 3, 2, 1, 1, 0, 0]}, "closure_pct": 0.0, "매출중앙": 95}, "S3xL2": {"n": 3, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "매출중앙": null}, "S3xL1": {"n": 7, "weighted": 241, "profit_rate": -35.3, "cost": {"원가율": 21.4, "인건비율": 110.0, "임차료율": 0.0, "기타비용율": 5.9, "영업이익률": -35.3}, "hardship": {"labels": ["동일업종 경쟁", "상권 쇠퇴", "부채상환", "원재료비", "최저임금(인건비)", "보증금·월세", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [85.7, 57.1, 14.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "counts": [6, 4, 1, 0, 0, 0, 0, 0, 0]}, "closure_pct": 0.0, "매출중앙": 17}, "S4xL4": {"n": 9, "weighted": 2041, "profit_rate": 21.6, "cost": {"원가율": 41.2, "인건비율": 23.1, "임차료율": 3.6, "기타비용율": 8.4, "영업이익률": 21.6}, "hardship": {"labels": ["동일업종 경쟁", "원재료비", "상권 쇠퇴", "최저임금(인건비)", "보증금·월세", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [66.7, 55.6, 44.4, 44.4, 11.1, 11.1, 11.1, 0.0, 0.0], "counts": [6, 5, 4, 4, 1, 1, 1, 0, 0]}, "closure_pct": 11.1, "매출중앙": 300}, "S4xL3": {"n": 1, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "매출중앙": null}, "S4xL2": {"n": 1, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "매출중앙": null}, "S4xL1": {"n": 1, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "매출중앙": null}}}};
+// ── 데이터 (analysis.py가 이 라인을 교체) ──────────────────────────────────
+const D = {"sec1": {"overview": {"n": 1162, "weighted": 745196, "profit_rate": 23.4, "cost": {"원가율": 44.0, "인건비율": 0.0, "임차료율": 9.3, "기타비용율": 5.6, "영업이익률": 23.4}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [68.8, 54.6, 39.3, 31.3, 16.4, 10.2, 7.3, 6.3, 0.7], "counts": [799, 634, 457, 364, 190, 119, 85, 73, 8]}, "closure_pct": 4.5, "closure_dist": {"계속운영": 94.3, "사업전환": 1.2, "폐업후취업": 1.7, "폐업·은퇴": 2.8}, "revenue_median": 10250, "total_rest_n": 1162}, "rev_dist": [{"key": "L1", "label": "~3,600만", "n": 135, "pct": 11.6, "weighted": 88052}, {"key": "L2", "label": "3,600~7,200만", "n": 218, "pct": 18.8, "weighted": 140227}, {"key": "L3", "label": "7,200만~1.2억", "n": 315, "pct": 27.1, "weighted": 207010}, {"key": "L4", "label": "1.2억+", "n": 494, "pct": 42.5, "weighted": 309907}], "size_dist": [{"label": "1인", "n": 576, "pct": 49.6, "weighted": 368680}, {"label": "2~3인", "n": 523, "pct": 45.0, "weighted": 332243}, {"label": "4~9인", "n": 63, "pct": 5.4, "weighted": 44273}], "closure_dist": {"계속운영": {"n": 1096, "pct": 94.3}, "사업전환": {"n": 14, "pct": 1.2}, "폐업후취업": {"n": 20, "pct": 1.7}, "폐업·은퇴": {"n": 32, "pct": 2.8}}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [68.8, 54.6, 39.3, 31.3, 16.4, 10.2, 7.3, 6.3, 0.7], "counts": [799, 634, 457, 364, 190, 119, 85, 73, 8]}}, "sec2": {"size_order": ["1인", "2~3인", "4~9인"], "rev_order": ["L1", "L2", "L3", "L4"], "rev_labels": {"L1": "~3,600만", "L2": "3,600~7,200만", "L3": "7,200만~1.2억", "L4": "1.2억+"}, "by_size": {"1인": {"n": 576, "weighted": 368680, "profit_rate": 28.0, "cost": {"원가율": 44.5, "인건비율": 0.0, "임차료율": 11.1, "기타비용율": 6.2, "영업이익률": 28.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [67.5, 55.0, 42.4, 31.2, 10.1, 9.5, 6.2, 4.0, 0.9], "counts": [389, 317, 244, 180, 58, 55, 36, 23, 5]}, "closure_pct": 4.9, "closure_dist": {"계속운영": 93.4, "사업전환": 1.7, "폐업후취업": 1.6, "폐업·은퇴": 3.3}, "revenue_median": 8000}, "2~3인": {"n": 523, "weighted": 332243, "profit_rate": 20.0, "cost": {"원가율": 43.5, "인건비율": 17.2, "임차료율": 8.3, "기타비용율": 5.0, "영업이익률": 20.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [69.8, 55.4, 37.7, 31.9, 21.6, 11.3, 8.8, 5.7, 0.6], "counts": [365, 290, 197, 167, 113, 59, 46, 30, 3]}, "closure_pct": 4.2, "closure_dist": {"계속운영": 95.0, "사업전환": 0.8, "폐업후취업": 1.7, "폐업·은퇴": 2.5}, "revenue_median": 14500}, "4~9인": {"n": 63, "weighted": 44273, "profit_rate": 15.8, "cost": {"원가율": 43.0, "인건비율": 26.9, "임차료율": 5.2, "기타비용율": 3.7, "영업이익률": 15.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "보증금·월세", "상권 쇠퇴", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [71.4, 42.9, 30.2, 27.0, 25.4, 25.4, 11.1, 7.9, 0.0], "counts": [45, 27, 19, 17, 16, 16, 7, 5, 0]}, "closure_pct": 3.2, "closure_dist": {"계속운영": 96.8, "사업전환": 0.0, "폐업후취업": 3.2, "폐업·은퇴": 0.0}, "revenue_median": 35000}}, "by_revenue": {"L1": {"label": "~3,600만", "n": 135, "weighted": 88052, "profit_rate": 17.1, "cost": {"원가율": 42.9, "인건비율": 0.0, "임차료율": 20.0, "기타비용율": 10.0, "영업이익률": 17.1}, "hardship": {"labels": ["원재료비", "상권 쇠퇴", "동일업종 경쟁", "보증금·월세", "부채상환", "판로개척(온라인)", "최저임금(인건비)", "인력관리", "디지털 기술도입"], "rates": [65.2, 57.0, 48.1, 25.9, 7.4, 6.7, 5.2, 3.0, 0.0], "counts": [88, 77, 65, 35, 10, 9, 7, 4, 0]}, "closure_pct": 4.4, "closure_dist": {"계속운영": 94.1, "사업전환": 1.5, "폐업후취업": 1.5, "폐업·은퇴": 3.0}, "revenue_median": 2500}, "L2": {"label": "3,600~7,200만", "n": 218, "weighted": 140227, "profit_rate": 27.9, "cost": {"원가율": 42.9, "인건비율": 0.0, "임차료율": 12.4, "기타비용율": 5.6, "영업이익률": 27.9}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "판로개척(온라인)", "부채상환", "인력관리", "디지털 기술도입"], "rates": [67.0, 53.2, 47.7, 27.5, 9.2, 5.5, 5.0, 4.1, 0.5], "counts": [146, 116, 104, 60, 20, 12, 11, 9, 1]}, "closure_pct": 6.4, "closure_dist": {"계속운영": 91.3, "사업전환": 2.3, "폐업후취업": 2.3, "폐업·은퇴": 4.1}, "revenue_median": 5600}, "L3": {"label": "7,200만~1.2억", "n": 315, "weighted": 207010, "profit_rate": 24.8, "cost": {"원가율": 45.0, "인건비율": 0.0, "임차료율": 11.0, "기타비용율": 6.0, "영업이익률": 24.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [66.3, 56.8, 36.2, 33.7, 12.7, 10.8, 6.0, 5.1, 1.0], "counts": [209, 179, 114, 106, 40, 34, 19, 16, 3]}, "closure_pct": 6.0, "closure_dist": {"계속운영": 92.7, "사업전환": 1.3, "폐업후취업": 1.9, "폐업·은퇴": 4.1}, "revenue_median": 9800}, "L4": {"label": "1.2억+", "n": 494, "weighted": 309907, "profit_rate": 21.1, "cost": {"원가율": 44.4, "인건비율": 16.7, "임차료율": 7.0, "기타비용율": 4.8, "영업이익률": 21.1}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "상권 쇠퇴", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [72.1, 55.5, 33.0, 32.8, 24.9, 13.0, 11.3, 6.7, 0.8], "counts": [356, 274, 163, 162, 123, 64, 56, 33, 4]}, "closure_pct": 2.6, "closure_dist": {"계속운영": 96.8, "사업전환": 0.6, "폐업후취업": 1.4, "폐업·은퇴": 1.2}, "revenue_median": 20100}}, "by_size_rev": {"1인": {"L1": {"n": 99, "weighted": 64759, "profit_rate": 20.0, "cost": {"원가율": 42.9, "인건비율": 0.0, "임차료율": 20.0, "기타비용율": 8.7, "영업이익률": 20.0}, "hardship": {"labels": ["원재료비", "상권 쇠퇴", "동일업종 경쟁", "보증금·월세", "부채상환", "판로개척(온라인)", "최저임금(인건비)", "인력관리", "디지털 기술도입"], "rates": [64.6, 55.6, 44.4, 24.2, 8.1, 8.1, 6.1, 4.0, 0.0], "counts": [64, 55, 44, 24, 8, 8, 6, 4, 0]}, "closure_pct": 6.1, "closure_dist": {"계속운영": 91.9, "사업전환": 2.0, "폐업후취업": 2.0, "폐업·은퇴": 4.0}, "revenue_median": 2500}, "L2": {"n": 150, "weighted": 93894, "profit_rate": 27.9, "cost": {"원가율": 43.1, "인건비율": 0.0, "임차료율": 12.5, "기타비용율": 5.9, "영업이익률": 27.9}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "판로개척(온라인)", "인력관리", "부채상환", "디지털 기술도입"], "rates": [64.7, 54.7, 46.7, 28.7, 10.7, 6.0, 4.0, 2.7, 0.7], "counts": [97, 82, 70, 43, 16, 9, 6, 4, 1]}, "closure_pct": 5.3, "closure_dist": {"계속운영": 92.0, "사업전환": 2.7, "폐업후취업": 0.7, "폐업·은퇴": 4.7}, "revenue_median": 5400}, "L3": {"n": 185, "weighted": 119533, "profit_rate": 28.3, "cost": {"원가율": 46.5, "인건비율": 0.0, "임차료율": 10.3, "기타비용율": 5.8, "영업이익률": 28.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "부채상환", "최저임금(인건비)", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [68.1, 55.7, 36.2, 34.6, 14.1, 8.6, 5.4, 3.2, 1.6], "counts": [126, 103, 67, 64, 26, 16, 10, 6, 3]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 93.5, "사업전환": 1.1, "폐업후취업": 1.6, "폐업·은퇴": 3.8}, "revenue_median": 9600}, "L4": {"n": 142, "weighted": 90494, "profit_rate": 29.1, "cost": {"원가율": 44.2, "인건비율": 0.0, "임차료율": 8.4, "기타비용율": 5.1, "영업이익률": 29.1}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [71.8, 62.0, 36.6, 34.5, 14.1, 12.0, 6.3, 4.9, 0.7], "counts": [102, 88, 52, 49, 20, 17, 9, 7, 1]}, "closure_pct": 2.8, "closure_dist": {"계속운영": 95.8, "사업전환": 1.4, "폐업후취업": 2.1, "폐업·은퇴": 0.7}, "revenue_median": 18000}}, "2~3인": {"L1": {"n": 36, "weighted": 23294, "profit_rate": 8.1, "cost": {"원가율": 44.0, "인건비율": 5.0, "임차료율": 19.6, "기타비용율": 10.0, "영업이익률": 8.1}, "hardship": {"labels": ["원재료비", "상권 쇠퇴", "동일업종 경쟁", "보증금·월세", "부채상환", "최저임금(인건비)", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [66.7, 61.1, 58.3, 30.6, 5.6, 2.8, 2.8, 0.0, 0.0], "counts": [24, 22, 21, 11, 2, 1, 1, 0, 0]}, "closure_pct": 0.0, "closure_dist": {"계속운영": 100.0, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 0.0}, "revenue_median": 2600}, "L2": {"n": 66, "weighted": 45130, "profit_rate": 27.7, "cost": {"원가율": 42.8, "인건비율": 0.0, "임차료율": 11.2, "기타비용율": 3.7, "영업이익률": 27.7}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "부채상환", "최저임금(인건비)", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [71.2, 51.5, 50.0, 24.2, 10.6, 6.1, 4.5, 3.0, 0.0], "counts": [47, 34, 33, 16, 7, 4, 3, 2, 0]}, "closure_pct": 9.1, "closure_dist": {"계속운영": 89.4, "사업전환": 1.5, "폐업후취업": 6.1, "폐업·은퇴": 3.0}, "revenue_median": 5700}, "L3": {"n": 126, "weighted": 84721, "profit_rate": 20.5, "cost": {"원가율": 40.0, "인건비율": 15.7, "임차료율": 12.3, "기타비용율": 6.1, "영업이익률": 20.5}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "판로개척(온라인)", "부채상환", "인력관리", "디지털 기술도입"], "rates": [63.5, 58.7, 36.5, 32.5, 18.3, 7.1, 5.6, 5.6, 0.0], "counts": [80, 74, 46, 41, 23, 9, 7, 7, 0]}, "closure_pct": 7.1, "closure_dist": {"계속운영": 91.3, "사업전환": 1.6, "폐업후취업": 2.4, "폐업·은퇴": 4.8}, "revenue_median": 9900}, "L4": {"n": 295, "weighted": 179099, "profit_rate": 20.0, "cost": {"원가율": 44.4, "인건비율": 19.2, "임차료율": 6.7, "기타비용율": 4.9, "영업이익률": 20.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "상권 쇠퇴", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [72.5, 54.6, 33.6, 32.5, 28.8, 14.6, 12.5, 5.8, 1.0], "counts": [214, 161, 99, 96, 85, 43, 37, 17, 3]}, "closure_pct": 2.4, "closure_dist": {"계속운영": 97.3, "사업전환": 0.3, "폐업후취업": 0.7, "폐업·은퇴": 1.7}, "revenue_median": 20000}}, "4~9인": {"L1": {"n": 0, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "closure_dist": null, "revenue_median": null}, "L2": {"n": 2, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "closure_dist": null, "revenue_median": null}, "L3": {"n": 4, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "closure_dist": null, "revenue_median": null}, "L4": {"n": 57, "weighted": 40314, "profit_rate": 14.4, "cost": {"원가율": 43.9, "인건비율": 26.9, "임차료율": 5.8, "기타비용율": 3.7, "영업이익률": 14.4}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "보증금·월세", "상권 쇠퇴", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [70.2, 43.9, 31.6, 26.3, 24.6, 21.1, 12.3, 7.0, 0.0], "counts": [40, 25, 18, 15, 14, 12, 7, 4, 0]}, "closure_pct": 3.5, "closure_dist": {"계속운영": 96.5, "사업전환": 0.0, "폐업후취업": 3.5, "폐업·은퇴": 0.0}, "revenue_median": 36000}}}}, "sec3": {"size_order": ["1인", "2~3인", "4~9인"], "emp_order": ["장기중심", "단기중심", "해당없음"], "by_size": {"1인": {"n": 576, "weighted": 368680, "profit_rate": 28.0, "cost": {"원가율": 44.5, "인건비율": 0.0, "임차료율": 11.1, "기타비용율": 6.2, "영업이익률": 28.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [67.5, 55.0, 42.4, 31.2, 10.1, 9.5, 6.2, 4.0, 0.9], "counts": [389, 317, 244, 180, 58, 55, 36, 23, 5]}, "closure_pct": 4.9, "closure_dist": {"계속운영": 93.4, "사업전환": 1.7, "폐업후취업": 1.6, "폐업·은퇴": 3.3}, "revenue_median": 8000}, "2~3인": {"n": 523, "weighted": 332243, "profit_rate": 20.0, "cost": {"원가율": 43.5, "인건비율": 17.2, "임차료율": 8.3, "기타비용율": 5.0, "영업이익률": 20.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [69.8, 55.4, 37.7, 31.9, 21.6, 11.3, 8.8, 5.7, 0.6], "counts": [365, 290, 197, 167, 113, 59, 46, 30, 3]}, "closure_pct": 4.2, "closure_dist": {"계속운영": 95.0, "사업전환": 0.8, "폐업후취업": 1.7, "폐업·은퇴": 2.5}, "revenue_median": 14500}, "4~9인": {"n": 63, "weighted": 44273, "profit_rate": 15.8, "cost": {"원가율": 43.0, "인건비율": 26.9, "임차료율": 5.2, "기타비용율": 3.7, "영업이익률": 15.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "보증금·월세", "상권 쇠퇴", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [71.4, 42.9, 30.2, 27.0, 25.4, 25.4, 11.1, 7.9, 0.0], "counts": [45, 27, 19, 17, 16, 16, 7, 5, 0]}, "closure_pct": 3.2, "closure_dist": {"계속운영": 96.8, "사업전환": 0.0, "폐업후취업": 3.2, "폐업·은퇴": 0.0}, "revenue_median": 35000}}, "by_emp": {"장기중심": {"n": 215, "weighted": 135474, "profit_rate": 15.3, "cost": {"원가율": 40.3, "인건비율": 25.5, "임차료율": 6.5, "기타비용율": 4.1, "영업이익률": 15.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "상권 쇠퇴", "보증금·월세", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [71.6, 53.0, 30.2, 29.3, 28.8, 18.6, 11.2, 7.9, 0.9], "counts": [154, 114, 65, 63, 62, 40, 24, 17, 2]}, "closure_pct": 1.9, "closure_dist": {"계속운영": 97.7, "사업전환": 0.5, "폐업후취업": 1.9, "폐업·은퇴": 0.0}, "revenue_median": 20000}, "단기중심": {"n": 65, "weighted": 40730, "profit_rate": 18.5, "cost": {"원가율": 40.0, "인건비율": 20.8, "임차료율": 7.3, "기타비용율": 5.0, "영업이익률": 18.5}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "상권 쇠퇴", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [75.4, 38.5, 38.5, 33.8, 29.2, 16.9, 10.8, 6.2, 0.0], "counts": [49, 25, 25, 22, 19, 11, 7, 4, 0]}, "closure_pct": 6.2, "closure_dist": {"계속운영": 93.8, "사업전환": 0.0, "폐업후취업": 1.5, "폐업·은퇴": 4.6}, "revenue_median": 19000}, "해당없음": {"n": 882, "weighted": 568992, "profit_rate": 25.7, "cost": {"원가율": 45.0, "인건비율": 0.0, "임차료율": 10.6, "기타비용율": 6.0, "영업이익률": 25.7}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [67.6, 56.1, 42.5, 31.4, 11.7, 9.5, 5.9, 4.3, 0.7], "counts": [596, 495, 375, 277, 103, 84, 52, 38, 6]}, "closure_pct": 5.0, "closure_dist": {"계속운영": 93.5, "사업전환": 1.5, "폐업후취업": 1.7, "폐업·은퇴": 3.3}, "revenue_median": 9200}}, "cells": {"1인x장기중심": {"n": 0, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "closure_dist": null, "revenue_median": null}, "1인x단기중심": {"n": 0, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "closure_dist": null, "revenue_median": null}, "1인x해당없음": {"n": 576, "weighted": 368680, "profit_rate": 28.0, "cost": {"원가율": 44.5, "인건비율": 0.0, "임차료율": 11.1, "기타비용율": 6.2, "영업이익률": 28.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [67.5, 55.0, 42.4, 31.2, 10.1, 9.5, 6.2, 4.0, 0.9], "counts": [389, 317, 244, 180, 58, 55, 36, 23, 5]}, "closure_pct": 4.9, "closure_dist": {"계속운영": 93.4, "사업전환": 1.7, "폐업후취업": 1.6, "폐업·은퇴": 3.3}, "revenue_median": 8000}, "2~3인x장기중심": {"n": 167, "weighted": 102366, "profit_rate": 15.3, "cost": {"원가율": 38.3, "인건비율": 25.0, "임차료율": 6.9, "기타비용율": 4.3, "영업이익률": 15.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "상권 쇠퇴", "보증금·월세", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [70.7, 53.3, 31.7, 30.5, 29.9, 15.6, 11.4, 6.6, 1.2], "counts": [118, 89, 53, 51, 50, 26, 19, 11, 2]}, "closure_pct": 1.8, "closure_dist": {"계속운영": 97.6, "사업전환": 0.6, "폐업후취업": 1.8, "폐업·은퇴": 0.0}, "revenue_median": 18000}, "2~3인x단기중심": {"n": 57, "weighted": 35032, "profit_rate": 20.7, "cost": {"원가율": 40.0, "인건비율": 20.7, "임차료율": 7.3, "기타비용율": 5.4, "영업이익률": 20.7}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "상권 쇠퇴", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [75.4, 42.1, 36.8, 33.3, 29.8, 19.3, 10.5, 5.3, 0.0], "counts": [43, 24, 21, 19, 17, 11, 6, 3, 0]}, "closure_pct": 5.3, "closure_dist": {"계속운영": 94.7, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 5.3}, "revenue_median": 17000}, "2~3인x해당없음": {"n": 299, "weighted": 194845, "profit_rate": 24.0, "cost": {"원가율": 45.8, "인건비율": 0.0, "임차료율": 10.0, "기타비용율": 5.7, "영업이익률": 24.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [68.2, 59.2, 43.1, 32.1, 13.7, 9.7, 5.4, 4.7, 0.3], "counts": [204, 177, 129, 96, 41, 29, 16, 14, 1]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 93.6, "사업전환": 1.0, "폐업후취업": 2.0, "폐업·은퇴": 3.3}, "revenue_median": 11200}, "4~9인x장기중심": {"n": 48, "weighted": 33108, "profit_rate": 15.1, "cost": {"원가율": 43.9, "인건비율": 28.0, "임차료율": 4.3, "기타비용율": 3.7, "영업이익률": 15.1}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "인력관리", "상권 쇠퇴", "최저임금(인건비)", "보증금·월세", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [75.0, 52.1, 29.2, 25.0, 25.0, 25.0, 12.5, 10.4, 0.0], "counts": [36, 25, 14, 12, 12, 12, 6, 5, 0]}, "closure_pct": 2.1, "closure_dist": {"계속운영": 97.9, "사업전환": 0.0, "폐업후취업": 2.1, "폐업·은퇴": 0.0}, "revenue_median": 36000}, "4~9인x단기중심": {"n": 8, "weighted": 5698, "profit_rate": 11.9, "cost": {"원가율": 38.1, "인건비율": 31.0, "임차료율": 9.2, "기타비용율": 4.6, "영업이익률": 11.9}, "hardship": {"labels": ["원재료비", "보증금·월세", "최저임금(인건비)", "상권 쇠퇴", "동일업종 경쟁", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [75.0, 50.0, 37.5, 25.0, 12.5, 12.5, 12.5, 0.0, 0.0], "counts": [6, 4, 3, 2, 1, 1, 1, 0, 0]}, "closure_pct": 12.5, "closure_dist": {"계속운영": 87.5, "사업전환": 0.0, "폐업후취업": 12.5, "폐업·은퇴": 0.0}, "revenue_median": 24450}, "4~9인x해당없음": {"n": 7, "weighted": 5467, "profit_rate": 16.0, "cost": {"원가율": 41.7, "인건비율": 26.4, "임차료율": 6.7, "기타비용율": 2.0, "영업이익률": 16.0}, "hardship": {"labels": ["최저임금(인건비)", "원재료비", "상권 쇠퇴", "동일업종 경쟁", "보증금·월세", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [57.1, 42.9, 28.6, 14.3, 14.3, 14.3, 0.0, 0.0, 0.0], "counts": [4, 3, 2, 1, 1, 1, 0, 0, 0]}, "closure_pct": 0.0, "closure_dist": {"계속운영": 100.0, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 0.0}, "revenue_median": 24000}}}, "sec4": {"fran_order": ["프랜차이즈", "독립"], "emp_order": ["장기중심", "단기중심", "해당없음"], "by_fran": {"프랜차이즈": {"n": 215, "weighted": 130145, "profit_rate": 23.3, "cost": {"원가율": 41.7, "인건비율": 13.4, "임차료율": 8.8, "기타비용율": 5.3, "영업이익률": 23.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "상권 쇠퇴", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [67.0, 59.5, 37.7, 28.4, 18.6, 12.1, 8.4, 6.0, 1.4], "counts": [144, 128, 81, 61, 40, 26, 18, 13, 3]}, "closure_pct": 5.1, "closure_dist": {"계속운영": 94.4, "사업전환": 0.5, "폐업후취업": 4.7, "폐업·은퇴": 0.5}, "revenue_median": 15000}, "독립": {"n": 947, "weighted": 615051, "profit_rate": 23.5, "cost": {"원가율": 44.3, "인건비율": 0.0, "임차료율": 9.8, "기타비용율": 5.7, "영업이익률": 23.5}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [69.2, 53.4, 41.8, 29.9, 15.8, 9.8, 7.1, 6.3, 0.5], "counts": [655, 506, 396, 283, 150, 93, 67, 60, 5]}, "closure_pct": 4.3, "closure_dist": {"계속운영": 94.3, "사업전환": 1.4, "폐업후취업": 1.1, "폐업·은퇴": 3.3}, "revenue_median": 10000}}, "by_emp": {"장기중심": {"n": 215, "weighted": 135474, "profit_rate": 15.3, "cost": {"원가율": 40.3, "인건비율": 25.5, "임차료율": 6.5, "기타비용율": 4.1, "영업이익률": 15.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "상권 쇠퇴", "보증금·월세", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [71.6, 53.0, 30.2, 29.3, 28.8, 18.6, 11.2, 7.9, 0.9], "counts": [154, 114, 65, 63, 62, 40, 24, 17, 2]}, "closure_pct": 1.9, "closure_dist": {"계속운영": 97.7, "사업전환": 0.5, "폐업후취업": 1.9, "폐업·은퇴": 0.0}, "revenue_median": 20000}, "단기중심": {"n": 65, "weighted": 40730, "profit_rate": 18.5, "cost": {"원가율": 40.0, "인건비율": 20.8, "임차료율": 7.3, "기타비용율": 5.0, "영업이익률": 18.5}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "상권 쇠퇴", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [75.4, 38.5, 38.5, 33.8, 29.2, 16.9, 10.8, 6.2, 0.0], "counts": [49, 25, 25, 22, 19, 11, 7, 4, 0]}, "closure_pct": 6.2, "closure_dist": {"계속운영": 93.8, "사업전환": 0.0, "폐업후취업": 1.5, "폐업·은퇴": 4.6}, "revenue_median": 19000}, "해당없음": {"n": 882, "weighted": 568992, "profit_rate": 25.7, "cost": {"원가율": 45.0, "인건비율": 0.0, "임차료율": 10.6, "기타비용율": 6.0, "영업이익률": 25.7}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [67.6, 56.1, 42.5, 31.4, 11.7, 9.5, 5.9, 4.3, 0.7], "counts": [596, 495, 375, 277, 103, 84, 52, 38, 6]}, "closure_pct": 5.0, "closure_dist": {"계속운영": 93.5, "사업전환": 1.5, "폐업후취업": 1.7, "폐업·은퇴": 3.3}, "revenue_median": 9200}}, "cells": {"프랜차이즈x장기중심": {"n": 57, "weighted": 36311, "profit_rate": 15.8, "cost": {"원가율": 40.5, "인건비율": 26.6, "임차료율": 7.5, "기타비용율": 4.7, "영업이익률": 15.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "부채상환", "상권 쇠퇴", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [68.4, 57.9, 40.4, 28.1, 17.5, 14.0, 14.0, 8.8, 1.8], "counts": [39, 33, 23, 16, 10, 8, 8, 5, 1]}, "closure_pct": 3.5, "closure_dist": {"계속운영": 96.5, "사업전환": 0.0, "폐업후취업": 3.5, "폐업·은퇴": 0.0}, "revenue_median": 20000}, "프랜차이즈x단기중심": {"n": 11, "weighted": 5973, "profit_rate": 20.9, "cost": {"원가율": 34.8, "인건비율": 29.3, "임차료율": 8.4, "기타비용율": 4.5, "영업이익률": 20.9}, "hardship": {"labels": ["보증금·월세", "원재료비", "최저임금(인건비)", "상권 쇠퇴", "동일업종 경쟁", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [72.7, 63.6, 45.5, 36.4, 27.3, 18.2, 0.0, 0.0, 0.0], "counts": [8, 7, 5, 4, 3, 2, 0, 0, 0]}, "closure_pct": 9.1, "closure_dist": {"계속운영": 90.9, "사업전환": 0.0, "폐업후취업": 9.1, "폐업·은퇴": 0.0}, "revenue_median": 24900}, "프랜차이즈x해당없음": {"n": 147, "weighted": 87861, "profit_rate": 25.4, "cost": {"원가율": 42.6, "인건비율": 0.0, "임차료율": 10.0, "기타비용율": 5.6, "영업이익률": 25.4}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "상권 쇠퇴", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [66.7, 62.6, 34.0, 33.3, 12.9, 10.9, 5.4, 5.4, 1.4], "counts": [98, 92, 50, 49, 19, 16, 8, 8, 2]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 93.9, "사업전환": 0.7, "폐업후취업": 4.8, "폐업·은퇴": 0.7}, "revenue_median": 12500}, "독립x장기중심": {"n": 158, "weighted": 99163, "profit_rate": 15.1, "cost": {"원가율": 40.2, "인건비율": 25.2, "임차료율": 6.0, "기타비용율": 4.0, "영업이익률": 15.1}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "최저임금(인건비)", "보증금·월세", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [72.8, 51.3, 34.8, 31.0, 24.7, 20.3, 8.9, 7.6, 0.6], "counts": [115, 81, 55, 49, 39, 32, 14, 12, 1]}, "closure_pct": 1.3, "closure_dist": {"계속운영": 98.1, "사업전환": 0.6, "폐업후취업": 1.3, "폐업·은퇴": 0.0}, "revenue_median": 20000}, "독립x단기중심": {"n": 54, "weighted": 34757, "profit_rate": 18.0, "cost": {"원가율": 40.8, "인건비율": 20.7, "임차료율": 7.0, "기타비용율": 5.2, "영업이익률": 18.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "최저임금(인건비)", "보증금·월세", "상권 쇠퇴", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [77.8, 40.7, 31.5, 31.5, 27.8, 20.4, 9.3, 7.4, 0.0], "counts": [42, 22, 17, 17, 15, 11, 5, 4, 0]}, "closure_pct": 5.6, "closure_dist": {"계속운영": 94.4, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 5.6}, "revenue_median": 16900}, "독립x해당없음": {"n": 735, "weighted": 481131, "profit_rate": 25.8, "cost": {"원가율": 45.4, "인건비율": 0.0, "임차료율": 10.8, "기타비용율": 6.0, "영업이익률": 25.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [67.8, 54.8, 44.4, 30.9, 11.4, 9.3, 6.0, 4.1, 0.5], "counts": [498, 403, 326, 227, 84, 68, 44, 30, 4]}, "closure_pct": 4.9, "closure_dist": {"계속운영": 93.5, "사업전환": 1.6, "폐업후취업": 1.1, "폐업·은퇴": 3.8}, "revenue_median": 8700}}}, "sec5": {"age_order": [], "by_age": {}}, "sec6": {"startup_order": ["1회", "2회", "3회+"], "tenure_order": ["~2년", "3~5년", "6~10년", "11~20년", "21년+"], "by_startup": {"1회": {"n": 830, "weighted": 536895, "profit_rate": 23.5, "cost": {"원가율": 43.5, "인건비율": 0.0, "임차료율": 9.6, "기타비용율": 5.3, "영업이익률": 23.5}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [69.0, 55.9, 38.8, 31.4, 14.8, 10.6, 6.6, 6.5, 0.6], "counts": [573, 464, 322, 261, 123, 88, 55, 54, 5]}, "closure_pct": 4.1, "closure_dist": {"계속운영": 94.6, "사업전환": 1.3, "폐업후취업": 2.0, "폐업·은퇴": 2.0}, "revenue_median": 10000}, "2회": {"n": 258, "weighted": 160637, "profit_rate": 24.0, "cost": {"원가율": 44.9, "인건비율": 10.1, "임차료율": 8.9, "기타비용율": 5.7, "영업이익률": 24.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [69.0, 53.1, 43.0, 30.6, 20.9, 9.3, 9.3, 5.8, 1.2], "counts": [178, 137, 111, 79, 54, 24, 24, 15, 3]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 93.8, "사업전환": 0.8, "폐업후취업": 1.2, "폐업·은퇴": 4.3}, "revenue_median": 12000}, "3회+": {"n": 74, "weighted": 47664, "profit_rate": 20.2, "cost": {"원가율": 47.9, "인건비율": 0.0, "임차료율": 11.9, "기타비용율": 6.1, "영업이익률": 20.2}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [64.9, 44.6, 32.4, 32.4, 17.6, 9.5, 8.1, 5.4, 0.0], "counts": [48, 33, 24, 24, 13, 7, 6, 4, 0]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 93.2, "사업전환": 1.4, "폐업후취업": 0.0, "폐업·은퇴": 5.4}, "revenue_median": 11450}}, "by_tenure": {"~2년": {"n": 262, "weighted": 181295, "profit_rate": 23.8, "cost": {"원가율": 43.4, "인건비율": 4.1, "임차료율": 10.9, "기타비용율": 5.0, "영업이익률": 23.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [70.2, 54.2, 37.0, 34.0, 18.3, 11.5, 6.9, 5.0, 1.1], "counts": [184, 142, 97, 89, 48, 30, 18, 13, 3]}, "closure_pct": 4.2, "closure_dist": {"계속운영": 94.3, "사업전환": 1.5, "폐업후취업": 2.3, "폐업·은퇴": 1.9}, "revenue_median": 12000}, "3~5년": {"n": 280, "weighted": 169151, "profit_rate": 25.0, "cost": {"원가율": 41.2, "인건비율": 8.3, "임차료율": 10.5, "기타비용율": 5.7, "영업이익률": 25.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [66.8, 53.6, 37.5, 36.8, 16.8, 14.6, 9.6, 7.5, 0.4], "counts": [187, 150, 105, 103, 47, 41, 27, 21, 1]}, "closure_pct": 5.0, "closure_dist": {"계속운영": 92.9, "사업전환": 2.1, "폐업후취업": 1.4, "폐업·은퇴": 3.6}, "revenue_median": 11300}, "6~10년": {"n": 289, "weighted": 181823, "profit_rate": 21.3, "cost": {"원가율": 44.9, "인건비율": 7.5, "임차료율": 8.8, "기타비용율": 5.1, "영업이익률": 21.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [68.9, 54.7, 39.1, 31.8, 15.2, 9.0, 8.3, 6.2, 0.3], "counts": [199, 158, 113, 92, 44, 26, 24, 18, 1]}, "closure_pct": 5.2, "closure_dist": {"계속운영": 94.1, "사업전환": 0.7, "폐업후취업": 2.4, "폐업·은퇴": 2.8}, "revenue_median": 10300}, "11~20년": {"n": 232, "weighted": 146507, "profit_rate": 23.6, "cost": {"원가율": 45.1, "인건비율": 0.0, "임차료율": 8.3, "기타비용율": 6.7, "영업이익률": 23.6}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [71.6, 57.8, 40.1, 27.2, 16.4, 6.9, 6.0, 5.2, 1.3], "counts": [166, 134, 93, 63, 38, 16, 14, 12, 3]}, "closure_pct": 3.9, "closure_dist": {"계속운영": 95.3, "사업전환": 0.9, "폐업후취업": 1.3, "폐업·은퇴": 2.6}, "revenue_median": 10000}, "21년+": {"n": 99, "weighted": 66420, "profit_rate": 24.2, "cost": {"원가율": 48.6, "인건비율": 0.0, "임차료율": 5.3, "기타비용율": 6.0, "영업이익률": 24.2}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [63.6, 50.5, 49.5, 17.2, 13.1, 8.1, 6.1, 3.0, 0.0], "counts": [63, 50, 49, 17, 13, 8, 6, 3, 0]}, "closure_pct": 3.0, "closure_dist": {"계속운영": 97.0, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 3.0}, "revenue_median": 8000}}, "cells": {"1회x~2년": {"n": 186, "weighted": 129774, "profit_rate": 23.9, "cost": {"원가율": 42.0, "인건비율": 0.0, "임차료율": 11.5, "기타비용율": 4.8, "영업이익률": 23.9}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [71.5, 55.4, 34.9, 34.9, 15.1, 11.8, 5.4, 4.3, 1.1], "counts": [133, 103, 65, 65, 28, 22, 10, 8, 2]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 93.0, "사업전환": 1.6, "폐업후취업": 3.2, "폐업·은퇴": 2.2}, "revenue_median": 11700}, "1회x3~5년": {"n": 185, "weighted": 111322, "profit_rate": 25.8, "cost": {"원가율": 40.8, "인건비율": 0.0, "임차료율": 11.2, "기타비용율": 5.9, "영업이익률": 25.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "부채상환", "최저임금(인건비)", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [64.9, 56.8, 38.9, 34.6, 15.1, 13.5, 9.2, 6.5, 0.0], "counts": [120, 105, 72, 64, 28, 25, 17, 12, 0]}, "closure_pct": 3.2, "closure_dist": {"계속운영": 94.6, "사업전환": 2.2, "폐업후취업": 0.5, "폐업·은퇴": 2.7}, "revenue_median": 10100}, "1회x6~10년": {"n": 193, "weighted": 122246, "profit_rate": 19.3, "cost": {"원가율": 43.8, "인건비율": 10.0, "임차료율": 9.0, "기타비용율": 5.0, "영업이익률": 19.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [67.9, 54.4, 39.9, 35.8, 15.0, 9.8, 8.3, 6.7, 0.5], "counts": [131, 105, 77, 69, 29, 19, 16, 13, 1]}, "closure_pct": 5.2, "closure_dist": {"계속운영": 93.8, "사업전환": 1.0, "폐업후취업": 3.6, "폐업·은퇴": 1.6}, "revenue_median": 10300}, "1회x11~20년": {"n": 185, "weighted": 118029, "profit_rate": 24.0, "cost": {"원가율": 44.4, "인건비율": 0.0, "임차료율": 8.8, "기타비용율": 6.7, "영업이익률": 24.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [73.0, 58.4, 37.3, 27.6, 15.7, 7.6, 6.5, 5.9, 1.1], "counts": [135, 108, 69, 51, 29, 14, 12, 11, 2]}, "closure_pct": 3.8, "closure_dist": {"계속운영": 95.1, "사업전환": 1.1, "폐업후취업": 1.6, "폐업·은퇴": 2.2}, "revenue_median": 10000}, "1회x21년+": {"n": 81, "weighted": 55524, "profit_rate": 23.3, "cost": {"원가율": 50.0, "인건비율": 0.0, "임차료율": 4.0, "기타비용율": 5.8, "영업이익률": 23.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "최저임금(인건비)", "보증금·월세", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [66.7, 53.1, 48.1, 14.8, 14.8, 8.6, 6.2, 3.7, 0.0], "counts": [54, 43, 39, 12, 12, 7, 5, 3, 0]}, "closure_pct": 1.2, "closure_dist": {"계속운영": 98.8, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 1.2}, "revenue_median": 8700}, "2회x~2년": {"n": 56, "weighted": 37854, "profit_rate": 23.8, "cost": {"원가율": 45.2, "인건비율": 10.5, "임차료율": 9.2, "기타비용율": 5.9, "영업이익률": 23.8}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "최저임금(인건비)", "보증금·월세", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [64.3, 46.4, 42.9, 32.1, 30.4, 14.3, 12.5, 3.6, 1.8], "counts": [36, 26, 24, 18, 17, 8, 7, 2, 1]}, "closure_pct": 0.0, "closure_dist": {"계속운영": 100.0, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 0.0}, "revenue_median": 13450}, "2회x3~5년": {"n": 73, "weighted": 43739, "profit_rate": 20.0, "cost": {"원가율": 40.8, "인건비율": 14.3, "임차료율": 10.0, "기타비용율": 5.6, "영업이익률": 20.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "상권 쇠퇴", "최저임금(인건비)", "부채상환", "판로개척(온라인)", "인력관리", "디지털 기술도입"], "rates": [74.0, 49.3, 41.1, 39.7, 20.5, 13.7, 9.6, 6.8, 1.4], "counts": [54, 36, 30, 29, 15, 10, 7, 5, 1]}, "closure_pct": 8.2, "closure_dist": {"계속운영": 89.0, "사업전환": 2.7, "폐업후취업": 4.1, "폐업·은퇴": 4.1}, "revenue_median": 12600}, "2회x6~10년": {"n": 77, "weighted": 47500, "profit_rate": 25.7, "cost": {"원가율": 45.8, "인건비율": 3.3, "임차료율": 7.2, "기타비용율": 5.7, "영업이익률": 25.7}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [71.4, 59.7, 37.7, 22.1, 14.3, 10.4, 6.5, 6.5, 0.0], "counts": [55, 46, 29, 17, 11, 8, 5, 5, 0]}, "closure_pct": 5.2, "closure_dist": {"계속운영": 94.8, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 5.2}, "revenue_median": 11000}, "2회x11~20년": {"n": 37, "weighted": 22253, "profit_rate": 23.3, "cost": {"원가율": 50.0, "인건비율": 0.0, "임차료율": 6.5, "기타비용율": 6.5, "영업이익률": 23.3}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [64.9, 62.2, 54.1, 27.0, 24.3, 5.4, 5.4, 2.7, 2.7], "counts": [24, 23, 20, 10, 9, 2, 2, 1, 1]}, "closure_pct": 5.4, "closure_dist": {"계속운영": 94.6, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 5.4}, "revenue_median": 10000}, "2회x21년+": {"n": 15, "weighted": 9291, "profit_rate": 27.2, "cost": {"원가율": 44.1, "인건비율": 0.0, "임차료율": 11.5, "기타비용율": 6.4, "영업이익률": 27.2}, "hardship": {"labels": ["상권 쇠퇴", "원재료비", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [60.0, 60.0, 40.0, 33.3, 6.7, 6.7, 0.0, 0.0, 0.0], "counts": [9, 9, 6, 5, 1, 1, 0, 0, 0]}, "closure_pct": 13.3, "closure_dist": {"계속운영": 86.7, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 13.3}, "revenue_median": 5600}, "3회+x~2년": {"n": 20, "weighted": 13668, "profit_rate": 21.1, "cost": {"원가율": 44.2, "인건비율": 0.0, "임차료율": 14.7, "기타비용율": 4.2, "영업이익률": 21.1}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [75.0, 65.0, 40.0, 35.0, 10.0, 10.0, 5.0, 5.0, 0.0], "counts": [15, 13, 8, 7, 2, 2, 1, 1, 0]}, "closure_pct": 5.0, "closure_dist": {"계속운영": 90.0, "사업전환": 5.0, "폐업후취업": 0.0, "폐업·은퇴": 5.0}, "revenue_median": 10850}, "3회+x3~5년": {"n": 22, "weighted": 14090, "profit_rate": 18.5, "cost": {"원가율": 47.3, "인건비율": 8.2, "임차료율": 9.5, "기타비용율": 6.4, "영업이익률": 18.5}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "상권 쇠퇴", "인력관리", "부채상환", "판로개척(온라인)", "디지털 기술도입"], "rates": [59.1, 40.9, 40.9, 31.8, 18.2, 18.2, 13.6, 13.6, 0.0], "counts": [13, 9, 9, 7, 4, 4, 3, 3, 0]}, "closure_pct": 9.1, "closure_dist": {"계속운영": 90.9, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 9.1}, "revenue_median": 19500}, "3회+x6~10년": {"n": 19, "weighted": 12076, "profit_rate": 18.7, "cost": {"원가율": 49.4, "인건비율": 0.0, "임차료율": 12.1, "기타비용율": 5.9, "영업이익률": 18.7}, "hardship": {"labels": ["원재료비", "상권 쇠퇴", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [68.4, 36.8, 36.8, 31.6, 21.1, 10.5, 0.0, 0.0, 0.0], "counts": [13, 7, 7, 6, 4, 2, 0, 0, 0]}, "closure_pct": 5.3, "closure_dist": {"계속운영": 94.7, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 5.3}, "revenue_median": 9900}, "3회+x11~20년": {"n": 10, "weighted": 6226, "profit_rate": 21.5, "cost": {"원가율": 55.8, "인건비율": 0.0, "임차료율": 9.2, "기타비용율": 11.4, "영업이익률": 21.5}, "hardship": {"labels": ["원재료비", "상권 쇠퇴", "동일업종 경쟁", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [70.0, 40.0, 30.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0], "counts": [7, 4, 3, 2, 0, 0, 0, 0, 0]}, "closure_pct": 0.0, "closure_dist": {"계속운영": 100.0, "사업전환": 0.0, "폐업후취업": 0.0, "폐업·은퇴": 0.0}, "revenue_median": 5850}, "3회+x21년+": {"n": 3, "weighted": 0, "profit_rate": null, "cost": null, "hardship": null, "closure_pct": null, "closure_dist": null, "revenue_median": null}}}, "sec7": {"region_order": ["수도권", "광역시", "기타"], "by_region": {"수도권": {"n": 350, "weighted": 313681, "profit_rate": 20.9, "cost": {"원가율": 44.8, "인건비율": 9.0, "임차료율": 10.6, "기타비용율": 5.0, "영업이익률": 20.9}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "인력관리", "판로개척(온라인)", "부채상환", "디지털 기술도입"], "rates": [72.6, 51.1, 40.0, 36.3, 15.4, 8.6, 5.7, 4.0, 0.3], "counts": [254, 179, 140, 127, 54, 30, 20, 14, 1]}, "closure_pct": 5.1, "closure_dist": {"계속운영": 93.4, "사업전환": 1.4, "폐업후취업": 2.9, "폐업·은퇴": 2.3}, "revenue_median": 12000}, "광역시": {"n": 280, "weighted": 144811, "profit_rate": 24.6, "cost": {"원가율": 44.0, "인건비율": 0.0, "임차료율": 10.6, "기타비용율": 5.3, "영업이익률": 24.6}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [69.6, 60.0, 39.3, 37.1, 17.5, 13.2, 6.1, 6.1, 0.7], "counts": [195, 168, 110, 104, 49, 37, 17, 17, 2]}, "closure_pct": 5.0, "closure_dist": {"계속운영": 94.3, "사업전환": 0.7, "폐업후취업": 1.1, "폐업·은퇴": 3.9}, "revenue_median": 10000}, "기타": {"n": 532, "weighted": 286704, "profit_rate": 24.0, "cost": {"원가율": 43.8, "인건비율": 0.0, "임차료율": 7.9, "기타비용율": 6.4, "영업이익률": 24.0}, "hardship": {"labels": ["원재료비", "동일업종 경쟁", "상권 쇠퇴", "보증금·월세", "최저임금(인건비)", "부채상환", "인력관리", "판로개척(온라인)", "디지털 기술도입"], "rates": [65.8, 53.9, 38.9, 25.0, 16.4, 12.8, 7.1, 6.8, 0.9], "counts": [350, 287, 207, 133, 87, 68, 38, 36, 5]}, "closure_pct": 3.8, "closure_dist": {"계속운영": 94.9, "사업전환": 1.3, "폐업후취업": 1.3, "폐업·은퇴": 2.4}, "revenue_median": 9650}}}};
 
+// ── Chart.js 전역 설정 ──────────────────────────────────────────────────────
 Chart.defaults.font.family = "'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif";
 Chart.defaults.color = '#6b6b62';
 
-const G_BG   = ['#edf3a9','#95a961','#587638','#3a5630','#1e261b'];
-const G_TEXT = ['#1e261b','#1e261b','#ffffff','#ffffff','#ffffff'];
-const CKEYS  = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
-const COST_BG= ['#587638','#95a961','#3a5630','#c4c4b8','#1e261b'];
+const G = ['#1e261b','#3a5630','#587638','#95a961','#edf3a9'];
+const COST_COLORS = {
+  '원가율':     '#587638',
+  '인건비율':   '#95a961',
+  '임차료율':   '#3a5630',
+  '기타비용율': '#c4c4b8',
+  '영업이익률': '#1e261b',
+};
+const COST_KEYS = ['원가율','인건비율','임차료율','기타비용율','영업이익률'];
 
-function rateColor(r) {
-  if (r == null) return { bg:'#f2f2ed', text:'#c4c4b8' };
-  const i = r < 10 ? 0 : r < 20 ? 1 : r < 30 ? 2 : r < 40 ? 3 : 4;
-  return { bg: G_BG[i], text: G_TEXT[i] };
+function fmt(v, unit='%') {
+  if (v == null) return '-';
+  return v.toFixed(1) + unit;
+}
+function fmtN(n) {
+  return n != null ? n.toLocaleString() : '-';
+}
+function prClass(v) {
+  if (v == null) return 'pr-none';
+  if (v < 0)  return 'pr-low';
+  if (v < 10) return 'pr-mid1';
+  if (v < 20) return 'pr-mid2';
+  if (v < 30) return 'pr-good';
+  return 'pr-great';
 }
 
-// ── 상태 ─────────────────────────────────────────────────────────────────────
-let activeMode = 'left';
-const leftKeys  = new Set();
-const rightKeys = new Set();
-const panelCharts = { left: {}, right: {} };
-let sharedHardMax = 0;
-
-// ── 모드 전환 ─────────────────────────────────────────────────────────────────
-function setMode(mode) {
-  activeMode = mode;
-  document.getElementById('btn-left').className  = 'mode-btn' + (mode === 'left'  ? ' active-left'  : '');
-  document.getElementById('btn-right').className = 'mode-btn' + (mode === 'right' ? ' active-right' : '');
-}
-
-// ── 히트맵 빌드 ───────────────────────────────────────────────────────────────
-function buildHeatmap() {
-  const { levels, workers, worker_labels: wl, level_labels: ll, segments: segs } = D.grid;
-  let h = '<div></div>';
-
-  workers.forEach((w, i) => {
-    const ref = i >= 2 ? `<span class="wref">(참고용)</span>` : '';
-    h += `<div id="col-hdr-${w}" class="hm-col-hdr" onclick="toggleColumn('${w}')">
-      <span class="wk">${w}</span><span class="wlbl">${wl[w]}</span>${ref}
-    </div>`;
-  });
-
-  levels.forEach(l => {
-    h += `<div id="row-hdr-${l}" class="hm-row-hdr" onclick="toggleRow('${l}')">
-      <span class="lk">${l}</span><span class="llbl">${ll[l]}</span>
-    </div>`;
-    workers.forEach((w, i) => {
-      const key = `${w}x${l}`;
-      const seg = segs[key];
-      const dim = i >= 2 ? ' dim' : '';
-      if (!seg || seg.profit_rate == null) {
-        h += `<div class="hm-cell empty${dim}"><span style="font-size:.68rem;color:var(--neutral-300)">—</span></div>`;
-        return;
-      }
-      const { bg, text } = rateColor(seg.profit_rate);
-      h += `<div id="cell-${w}-${l}" class="hm-cell${dim}" style="background:${bg};color:${text}"
-        onclick="toggleCell('${key}')">
-        <span class="rate">${seg.profit_rate.toFixed(1)}%</span>
-        <span class="cnt">n=${seg.n}</span>
-      </div>`;
-    });
-  });
-
-  document.getElementById('heatmap').innerHTML = h;
-}
-
-// ── 유효 셀 ──────────────────────────────────────────────────────────────────
-function isSelectable(key) {
-  const seg = D.grid.segments[key];
-  return seg && seg.profit_rate != null;
-}
-function getColumnKeys(w) { return D.grid.levels.map(l => `${w}x${l}`).filter(isSelectable); }
-function getRowKeys(l)    { return D.grid.workers.map(w => `${w}x${l}`).filter(isSelectable); }
-
-// ── 셀 토글 ──────────────────────────────────────────────────────────────────
-function toggleCell(key) {
-  if (!isSelectable(key)) return;
-  const target = activeMode === 'left' ? leftKeys  : rightKeys;
-  const other  = activeMode === 'left' ? rightKeys : leftKeys;
-  if (target.has(key)) target.delete(key);
-  else { other.delete(key); target.add(key); }
-  syncUI();
-}
-
-// ── 헤더 클릭 ────────────────────────────────────────────────────────────────
-function toggleColumn(w) {
-  const keys   = getColumnKeys(w);
-  const target = activeMode === 'left' ? leftKeys  : rightKeys;
-  const other  = activeMode === 'left' ? rightKeys : leftKeys;
-  const allIn  = keys.length > 0 && keys.every(k => target.has(k));
-  if (allIn) keys.forEach(k => target.delete(k));
-  else       keys.forEach(k => { other.delete(k); target.add(k); });
-  syncUI();
-}
-function toggleRow(l) {
-  const keys   = getRowKeys(l);
-  const target = activeMode === 'left' ? leftKeys  : rightKeys;
-  const other  = activeMode === 'left' ? rightKeys : leftKeys;
-  const allIn  = keys.length > 0 && keys.every(k => target.has(k));
-  if (allIn) keys.forEach(k => target.delete(k));
-  else       keys.forEach(k => { other.delete(k); target.add(k); });
-  syncUI();
-}
-
-// ── UI 동기화 ─────────────────────────────────────────────────────────────────
-function syncUI() {
-  // 셀 배지 & 테두리 초기화
-  document.querySelectorAll('.hm-cell').forEach(el => {
-    el.classList.remove('sel-left','sel-right');
-    el.querySelectorAll('.hm-badge').forEach(b => b.remove());
-  });
-  function applyBadge(keysSet, side) {
-    keysSet.forEach(key => {
-      const [w, l] = key.split('x');
-      const el = document.getElementById(`cell-${w}-${l}`);
-      if (!el) return;
-      el.classList.add(`sel-${side}`);
-      const b = document.createElement('span');
-      b.className = `hm-badge badge-${side[0]}`; b.textContent = side[0].toUpperCase();
-      el.appendChild(b);
-    });
-  }
-  applyBadge(leftKeys,  'left');
-  applyBadge(rightKeys, 'right');
-
-  // 헤더 상태
-  D.grid.workers.forEach(w => {
-    const hdr  = document.getElementById(`col-hdr-${w}`);
-    if (!hdr) return;
-    const keys = getColumnKeys(w);
-    hdr.classList.toggle('hdr-left-selected',  keys.length > 0 && keys.every(k => leftKeys.has(k)));
-    hdr.classList.toggle('hdr-right-selected', keys.length > 0 && keys.every(k => rightKeys.has(k)));
-  });
-  D.grid.levels.forEach(l => {
-    const hdr  = document.getElementById(`row-hdr-${l}`);
-    if (!hdr) return;
-    const keys = getRowKeys(l);
-    hdr.classList.toggle('hdr-left-selected',  keys.length > 0 && keys.every(k => leftKeys.has(k)));
-    hdr.classList.toggle('hdr-right-selected', keys.length > 0 && keys.every(k => rightKeys.has(k)));
-  });
-
-  // dim-note
-  const hasDim = [...leftKeys, ...rightKeys].some(k => k.startsWith('S3') || k.startsWith('S4'));
-  document.getElementById('dim-note').style.display = hasDim ? 'block' : 'none';
-
-  // 애로사항 x축 공유 최댓값 계산 (%, 양쪽 최대 비율 기준)
-  function hardMax(keysSet) {
-    if (keysSet.size === 0) return 0;
-    const agg = computeAggregate(keysSet);
-    return agg.hardAll.length > 0 ? Math.max(...agg.hardAll.map(e => e.rate)) : 0;
-  }
-  sharedHardMax = Math.max(hardMax(leftKeys), hardMax(rightKeys));
-
-  updatePanel('left');
-  updatePanel('right');
-}
-
-// ── 집계 ─────────────────────────────────────────────────────────────────────
-function computeAggregate(keysSet) {
-  const segs = [...keysSet].map(k => D.grid.segments[k]);
-  const totalN        = segs.reduce((a, s) => a + s.n, 0);
-  const totalWeighted = segs.reduce((a, s) => a + s.weighted, 0);
-
-  const vP = segs.filter(s => s.profit_rate != null);
-  const nP = vP.reduce((a, s) => a + s.n, 0);
-  const profit_rate = nP > 0 ? vP.reduce((a, s) => a + s.profit_rate * s.n, 0) / nP : null;
-
-  const vC = segs.filter(s => s.cost != null);
-  const nC = vC.reduce((a, s) => a + s.n, 0);
-  const cost = {};
-  CKEYS.forEach(k => { cost[k] = nC > 0 ? vC.reduce((a, s) => a + (s.cost[k] ?? 0) * s.n, 0) / nC : null; });
-
-  // 애로사항: counts 합산 → 결합 n 기준 비율 재계산
-  const hardMap = {};
-  segs.forEach(s => {
-    if (!s.hardship) return;
-    s.hardship.labels.forEach((lbl, i) => { hardMap[lbl] = (hardMap[lbl] || 0) + s.hardship.counts[i]; });
-  });
-  const hardAll = Object.entries(hardMap)
-    .map(([lbl, cnt]) => ({ label: lbl, rate: totalN > 0 ? Math.round(cnt / totalN * 1000) / 10 : 0, count: cnt }))
-    .sort((a, b) => b.rate - a.rate);
-
-  const vCl = segs.filter(s => s.closure_pct != null);
-  const nCl = vCl.reduce((a, s) => a + s.n, 0);
-  const closure_pct = nCl > 0 ? vCl.reduce((a, s) => a + s.closure_pct * s.n, 0) / nCl : null;
-
-  const titleKeys = [...keysSet].sort().map(k => k.replace('x', '×')).join(', ');
-  return { totalN, totalWeighted, profit_rate, cost, hardAll, closure_pct, titleKeys };
-}
-
-// ── 패널 렌더 ─────────────────────────────────────────────────────────────────
-function updatePanel(side) {
-  const keysSet = side === 'left' ? leftKeys : rightKeys;
-  const el = document.getElementById(`panel-${side}`);
-
-  if (panelCharts[side].cost) { panelCharts[side].cost.destroy(); panelCharts[side].cost = null; }
-  if (panelCharts[side].hard) { panelCharts[side].hard.destroy(); panelCharts[side].hard = null; }
-
-  const headerHTML = `<div class="panel-header"><span class="panel-title ${side}">${side.toUpperCase()}</span>`;
-
-  if (keysSet.size === 0) {
-    el.innerHTML = headerHTML + `</div><div class="panel-empty">셀을 선택해주세요</div>`;
-    return;
-  }
-
-  const agg    = computeAggregate(keysSet);
-  const refAgg = (side === 'right' && leftKeys.size > 0) ? computeAggregate(leftKeys) : null;
-
-  function fv(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
-  function deltaCell(val, ref) {
-    if (!refAgg || val == null || ref == null) return `<td class="st-delta neu"></td>`;
-    const d = val - ref;
-    if (Math.abs(d) < 0.05) return `<td class="st-delta neu">—</td>`;
-    const cls = d > 0 ? 'pos' : 'neg';
-    return `<td class="st-delta ${cls}">${d > 0 ? '▲' : '▼'}${Math.abs(d).toFixed(1)}%p</td>`;
-  }
-  const hasDelta = side === 'right';
-  const dc = (v, r) => hasDelta ? deltaCell(v, r) : '';
-
-  let rows = `
-    <tr><td class="st-label">표본 수</td>
-        <td class="st-val">${agg.totalN.toLocaleString('ko-KR')}개</td>
-        ${hasDelta ? '<td class="st-delta neu"></td>' : ''}</tr>
-    <tr><td class="st-label">추정 사업체</td>
-        <td class="st-val">${agg.totalWeighted.toLocaleString('ko-KR')}개</td>
-        ${hasDelta ? '<td class="st-delta neu"></td>' : ''}</tr>
-    <tr><td class="st-label">영업이익률</td>
-        <td class="st-val">${fv(agg.profit_rate)}</td>
-        ${dc(agg.profit_rate, refAgg?.profit_rate)}</tr>`;
-  ['원가율','인건비율','임차료율','기타비용율'].forEach(k => {
-    rows += `<tr><td class="st-label">${k}</td>
-        <td class="st-val">${fv(agg.cost[k])}</td>
-        ${dc(agg.cost[k], refAgg?.cost[k])}</tr>`;
-  });
-  rows += `<tr><td class="st-label">폐업 의향</td>
-        <td class="st-val">${fv(agg.closure_pct)}</td>
-        ${dc(agg.closure_pct, refAgg?.closure_pct)}</tr>`;
-
-  el.innerHTML = headerHTML +
-    `<div class="panel-keys">${agg.titleKeys}</div></div>
-    <table class="stat-table">${rows}</table>
-    <div class="chart-title">비용 구조 (%)</div>
-    <div class="chart-wrap"><canvas id="c-cost-${side}"></canvas></div>
-    <div class="chart-title" style="margin-top:12px">경영 애로사항 (9개 항목, %)</div>
-    <div class="chart-wrap" style="height:280px"><canvas id="c-hard-${side}"></canvas></div>`;
-
-  const hardColor = side === 'left' ? '#587638' : '#b45309';
-
-  panelCharts[side].cost = new Chart(document.getElementById(`c-cost-${side}`), {
-    type: 'bar',
-    data: { labels: CKEYS, datasets: [{ data: CKEYS.map(k => agg.cost[k] ?? 0), backgroundColor: COST_BG, borderRadius: 4 }] },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` } } },
-      scales: {
-        x: { min: 0, max: 100, grid: { color:'#f2f2ed' }, ticks: { callback: v => v+'%', font:{ size:10 } } },
-        y: { grid: { display:false }, ticks: { font:{ size:10 } } }
-      }
+function vBarOpts(unit, tooltipExtra) {
+  unit = unit || '%';
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => tooltipExtra
+        ? tooltipExtra(ctx)
+        : ` ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '-'}${unit}` }}
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#f2f2ed' }, ticks: { callback: v => v + unit } },
     }
+  };
+}
+
+function hBarOpts(maxVal, unit) {
+  unit = unit || '%';
+  return {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 0, max: maxVal || undefined, grid: { color: '#f2f2ed' }, ticks: { callback: v => v+unit } },
+      y: { grid: { display: false } },
+    }
+  };
+}
+
+// ── 공통: 교차표 빌더 ────────────────────────────────────────────────────────
+function buildXtab(tableId, rowKeys, colKeys, cellFn, rowLabel, colLabel) {
+  const tbl = document.getElementById(tableId);
+  if (!tbl) return;
+  let html = '<thead><tr><th></th>';
+  colKeys.forEach(c => { html += `<th>${colLabel ? colLabel(c) : c}</th>`; });
+  html += '</tr></thead><tbody>';
+  rowKeys.forEach(rk => {
+    html += `<tr><th>${rowLabel ? rowLabel(rk) : rk}</th>`;
+    colKeys.forEach(ck => {
+      const cell = cellFn(rk, ck);
+      if (!cell || cell.profit_rate == null) {
+        html += `<td class="pr-none">-<div class="cell-n">n=${cell ? cell.n : 0}</div></td>`;
+      } else {
+        const cls = prClass(cell.profit_rate);
+        const cl  = cell.closure_pct != null ? cell.closure_pct.toFixed(1)+'%' : '-';
+        html += `<td class="has-data">
+          <span class="cell-profit ${cls}">${cell.profit_rate.toFixed(1)}%</span>
+          <div class="cell-n">n=${cell.n} | 폐업 ${cl}</div>
+        </td>`;
+      }
+    });
+    html += '</tr>';
   });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
 
-  const hardLabels = agg.hardAll.map(e => e.label);
-  const hardRates  = agg.hardAll.map(e => e.rate);
-  const hardCounts = agg.hardAll.map(e => e.count);
-  const hardN      = agg.totalN;
+// ── ① 산업 개요 ─────────────────────────────────────────────────────────────
+(function() {
+  const s1 = D.sec1;
+  const ov = s1.overview;
 
-  panelCharts[side].hard = new Chart(document.getElementById(`c-hard-${side}`), {
-    type: 'bar',
-    data: { labels: hardLabels, datasets: [{ data: hardRates, backgroundColor: hardColor, borderRadius: 4 }] },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.x.toFixed(1)}% (${hardCounts[ctx.dataIndex]}건 / ${hardN}명)` } }
+  // KPI
+  const kpi = document.getElementById('kpi-overview');
+  const cards = [
+    { label: '표본 수',           value: fmtN(ov.n) + '개',      sub: '매출>0 음식점업' },
+    { label: '추정 사업체 수',    value: fmtN(ov.weighted) + '개', sub: '가중값 합산' },
+    { label: '영업이익률 중앙값', value: fmt(ov.profit_rate),      sub: '' },
+    { label: '매출 중앙값',       value: fmtN(ov.revenue_median) + '만원', sub: '연간' },
+    { label: '폐업의향',          value: fmt(ov.closure_pct),      sub: '폐업후취업+폐업·은퇴' },
+  ];
+  kpi.innerHTML = cards.map(c =>
+    `<div class="kpi-card"><div class="kpi-label">${c.label}</div><div class="kpi-value">${c.value}</div><div class="kpi-sub">${c.sub}</div></div>`
+  ).join('');
+
+  // 종사자규모 분포
+  if (s1.size_dist.length) {
+    new Chart(document.getElementById('ch-size-dist'), {
+      type: 'bar',
+      data: {
+        labels: s1.size_dist.map(d => d.label),
+        datasets: [{ data: s1.size_dist.map(d => d.pct), backgroundColor: G.slice(1,4), borderRadius: 4 }]
       },
+      options: { ...vBarOpts('%', ctx => ` ${ctx.parsed.y.toFixed(1)}%  (n=${s1.size_dist[ctx.dataIndex].n.toLocaleString()})`) }
+    });
+  }
+
+  // 매출구간 분포
+  if (s1.rev_dist.length) {
+    new Chart(document.getElementById('ch-rev-dist'), {
+      type: 'bar',
+      data: {
+        labels: s1.rev_dist.map(d => d.label),
+        datasets: [{ data: s1.rev_dist.map(d => d.pct), backgroundColor: G.slice(0,4), borderRadius: 4 }]
+      },
+      options: { ...vBarOpts('%', ctx => ` ${ctx.parsed.y.toFixed(1)}%  (n=${s1.rev_dist[ctx.dataIndex].n.toLocaleString()})`) }
+    });
+  }
+
+  // 운영계획 도넛
+  const clLabels = Object.keys(s1.closure_dist);
+  if (clLabels.length) {
+    const clVals = clLabels.map(l => s1.closure_dist[l].pct);
+    new Chart(document.getElementById('ch-closure'), {
+      type: 'doughnut',
+      data: { labels: clLabels, datasets: [{ data: clVals, backgroundColor: ['#3a5630','#95a961','#c4c4b8','#991b1b'] }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12 } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%  (${s1.closure_dist[ctx.label].n.toLocaleString()}건)` }}
+        }
+      }
+    });
+  }
+
+  // 애로사항
+  if (s1.hardship) {
+    const h = s1.hardship;
+    const maxV = Math.ceil(Math.max(...h.rates) / 5) * 5;
+    new Chart(document.getElementById('ch-hard-all'), {
+      type: 'bar',
+      data: { labels: h.labels, datasets: [{ data: h.rates, backgroundColor: '#587638', borderRadius: 3 }] },
+      options: {
+        ...hBarOpts(maxV),
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: ctx => ` ${ctx.parsed.x.toFixed(1)}%  (${h.counts[ctx.dataIndex]}건 / ${ov.n}명)`
+        }}}
+      }
+    });
+  }
+})();
+
+// ── ② 비용구조 ──────────────────────────────────────────────────────────────
+(function() {
+  const s2 = D.sec2;
+  if (!s2.size_order.length) return;
+
+  function stackedCostChart(canvasId, labels, groups, keys) {
+    const datasets = COST_KEYS.map(k => ({
+      label: k,
+      data: keys.map(g => groups[g] && groups[g].cost ? groups[g].cost[k] : null),
+      backgroundColor: COST_COLORS[k],
+      stack: 'cost',
+    }));
+    new Chart(document.getElementById(canvasId), {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } }, tooltip: { mode: 'index' } },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, max: 100, grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' } }
+        }
+      }
+    });
+  }
+
+  stackedCostChart('ch-cost-size', s2.size_order, s2.by_size, s2.size_order);
+  stackedCostChart('ch-cost-rev',
+    s2.rev_order.map(k => s2.rev_labels[k]),
+    s2.by_revenue,
+    s2.rev_order
+  );
+
+  // 교차표
+  buildXtab('xtab-cost', s2.rev_order, s2.size_order,
+    (rk, sz) => s2.by_size_rev[sz] && s2.by_size_rev[sz][rk],
+    rk => s2.rev_labels[rk],
+    sz => sz
+  );
+})();
+
+// ── ③ 규모×고용형태 ─────────────────────────────────────────────────────────
+(function() {
+  const s3 = D.sec3;
+  if (!s3.size_order.length) return;
+  const szO = s3.size_order;
+  const emO = s3.emp_order;
+  const empColors = [G[1], G[3], '#c4c4b8'];
+
+  // 고용형태 구성 비율 (stacked 100%)
+  const empDistDs = emO.map((em, i) => ({
+    label: em,
+    data: szO.map(sz => {
+      const totSz = emO.reduce((acc, e) => acc + (s3.cells[`${sz}x${e}`]?.n || 0), 0);
+      const c = s3.cells[`${sz}x${em}`];
+      return totSz > 0 ? Math.round((c?.n || 0) / totSz * 1000) / 10 : 0;
+    }),
+    backgroundColor: empColors[i],
+    stack: 'emp',
+  }));
+  new Chart(document.getElementById('ch-emp-dist'), {
+    type: 'bar',
+    data: { labels: szO, datasets: empDistDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
       scales: {
-        x: { min: 0, max: sharedHardMax || 1, grid: { color:'#f2f2ed' }, ticks: { callback: v => v+'%', font:{ size:10 } } },
-        y: { grid: { display:false }, ticks: { font:{ size:10 } } }
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, max: 100, grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' } }
       }
     }
   });
-}
 
-// ── 초기화 ────────────────────────────────────────────────────────────────────
-buildHeatmap();
-leftKeys.add('S1xL2');   // 기본 LEFT: S1 × L2
-rightKeys.add('S2xL2');  // 기본 RIGHT: S2 × L2
-syncUI();
+  // 영업이익률 grouped bar
+  const profDs = emO.map((em, i) => ({
+    label: em,
+    data: szO.map(sz => s3.cells[`${sz}x${em}`]?.profit_rate ?? null),
+    backgroundColor: empColors[i],
+    borderRadius: 3,
+  }));
+  new Chart(document.getElementById('ch-size-emp-profit'), {
+    type: 'bar',
+    data: { labels: szO, datasets: profDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' } }
+      }
+    }
+  });
+
+  buildXtab('xtab-size-emp', szO, emO, (sz, em) => s3.cells[`${sz}x${em}`]);
+})();
+
+// ── ④ 프랜차이즈×고용형태 ───────────────────────────────────────────────────
+(function() {
+  const s4 = D.sec4;
+  if (!s4.fran_order.length) return;
+  const frO = s4.fran_order;
+  const emO = s4.emp_order;
+  const frColors = [G[1], G[3]];
+
+  const profDs = frO.map((fr, i) => ({
+    label: fr,
+    data: emO.map(em => s4.cells[`${fr}x${em}`]?.profit_rate ?? null),
+    backgroundColor: frColors[i], borderRadius: 3,
+  }));
+  new Chart(document.getElementById('ch-fran-profit'), {
+    type: 'bar',
+    data: { labels: emO, datasets: profDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' } } }
+    }
+  });
+
+  const clDs = frO.map((fr, i) => ({
+    label: fr,
+    data: emO.map(em => s4.cells[`${fr}x${em}`]?.closure_pct ?? null),
+    backgroundColor: [G[2], G[4]][i], borderRadius: 3,
+  }));
+  new Chart(document.getElementById('ch-fran-closure'), {
+    type: 'bar',
+    data: { labels: emO, datasets: clDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' } } }
+    }
+  });
+
+  buildXtab('xtab-fran-emp', frO, emO, (fr, em) => s4.cells[`${fr}x${em}`]);
+})();
+
+// ── ⑤ 연령대 ────────────────────────────────────────────────────────────────
+(function() {
+  const s5 = D.sec5;
+  if (!s5.age_order.length) return;
+  const agO = s5.age_order;
+  const byA = s5.by_age;
+
+  new Chart(document.getElementById('ch-age-profit'), {
+    type: 'bar',
+    data: { labels: agO, datasets: [{ data: agO.map(a => byA[a]?.profit_rate ?? null), backgroundColor: G[2], borderRadius: 4 }] },
+    options: { ...vBarOpts('%', ctx => ` ${ctx.parsed.y.toFixed(1)}%  (n=${byA[agO[ctx.dataIndex]]?.n || 0})`) }
+  });
+
+  new Chart(document.getElementById('ch-age-closure'), {
+    type: 'bar',
+    data: { labels: agO, datasets: [{ data: agO.map(a => byA[a]?.closure_pct ?? null), backgroundColor: '#b45309', borderRadius: 4 }] },
+    options: vBarOpts()
+  });
+
+  const KEY_HARD = ['원재료비', '보증금·월세', '동일업종 경쟁'];
+  const lineDs = KEY_HARD.map((k, i) => ({
+    label: k,
+    data: agO.map(a => {
+      const h = byA[a]?.hardship;
+      if (!h) return null;
+      const idx = h.labels.indexOf(k);
+      return idx >= 0 ? h.rates[idx] : null;
+    }),
+    borderColor: [G[2], G[1], G[3]][i],
+    backgroundColor: 'transparent',
+    tension: 0.3, pointRadius: 4,
+  }));
+  new Chart(document.getElementById('ch-age-hard'), {
+    type: 'line',
+    data: { labels: agO, datasets: lineDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' }, min: 0 } }
+    }
+  });
+})();
+
+// ── ⑥ 창업경험×운영연수 ─────────────────────────────────────────────────────
+(function() {
+  const s6 = D.sec6;
+  if (!s6.tenure_order.length) return;
+  const suO = s6.startup_order;
+  const teO = s6.tenure_order;
+
+  new Chart(document.getElementById('ch-tenure-profit'), {
+    type: 'bar',
+    data: { labels: teO, datasets: [{ data: teO.map(t => s6.by_tenure[t]?.profit_rate ?? null), backgroundColor: G[2], borderRadius: 4 }] },
+    options: { ...vBarOpts('%', ctx => ` ${ctx.parsed.y.toFixed(1)}%  (n=${s6.by_tenure[teO[ctx.dataIndex]]?.n || 0})`) }
+  });
+
+  new Chart(document.getElementById('ch-startup-profit'), {
+    type: 'bar',
+    data: { labels: suO, datasets: [{ data: suO.map(s => s6.by_startup[s]?.profit_rate ?? null), backgroundColor: G[1], borderRadius: 4 }] },
+    options: { ...vBarOpts('%', ctx => ` ${ctx.parsed.y.toFixed(1)}%  (n=${s6.by_startup[suO[ctx.dataIndex]]?.n || 0})`) }
+  });
+
+  buildXtab('xtab-startup-tenure', suO, teO, (su, te) => s6.cells[`${su}x${te}`]);
+})();
+
+// ── ⑦ 지역분석 ──────────────────────────────────────────────────────────────
+(function() {
+  const s7 = D.sec7;
+  if (!s7.region_order.length) return;
+  const rgO = s7.region_order;
+  const byR = s7.by_region;
+
+  new Chart(document.getElementById('ch-region-profit'), {
+    type: 'bar',
+    data: { labels: rgO, datasets: [{ data: rgO.map(r => byR[r]?.profit_rate ?? null), backgroundColor: G.slice(1,4), borderRadius: 4 }] },
+    options: { ...vBarOpts('%', ctx => ` ${ctx.parsed.y.toFixed(1)}%  (n=${byR[rgO[ctx.dataIndex]]?.n || 0})`) }
+  });
+
+  new Chart(document.getElementById('ch-region-closure'), {
+    type: 'bar',
+    data: { labels: rgO, datasets: [{ data: rgO.map(r => byR[r]?.closure_pct ?? null), backgroundColor: '#b45309', borderRadius: 4 }] },
+    options: vBarOpts()
+  });
+
+  new Chart(document.getElementById('ch-region-dist'), {
+    type: 'doughnut',
+    data: { labels: rgO, datasets: [{ data: rgO.map(r => byR[r]?.n || 0), backgroundColor: G.slice(1,4) }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()}명` }}
+      }
+    }
+  });
+
+  const KEY_HARD = ['원재료비', '보증금·월세', '상권 쇠퇴'];
+  const hardDs = KEY_HARD.map((k, i) => ({
+    label: k,
+    data: rgO.map(r => {
+      const h = byR[r]?.hardship;
+      if (!h) return null;
+      const idx = h.labels.indexOf(k);
+      return idx >= 0 ? h.rates[idx] : null;
+    }),
+    backgroundColor: [G[2], G[1], G[3]][i], borderRadius: 3,
+  }));
+  new Chart(document.getElementById('ch-region-hard'), {
+    type: 'bar',
+    data: { labels: rgO, datasets: hardDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2f2ed' }, ticks: { callback: v => v+'%' }, min: 0 } }
+    }
+  });
+})();
 </script>
 </body>
 </html>

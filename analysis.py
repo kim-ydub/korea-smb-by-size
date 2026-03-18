@@ -1,30 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-소상공인 실태조사 2023 — 16세그먼트 대시보드
-실행: python3 analysis.py → index.html 생성
-세그먼트: 종사자 S1~S4 × 매출 L1~L4 (단위: 백만원)
+소상공인 실태조사 2023 — 7섹션 음식점업 대시보드
+실행: python3 analysis.py → index.html 갱신
+필터: 산업대분류코드==I AND 산업중분류코드==56 (음식점업)
 """
 import pandas as pd
 import numpy as np
-import json, os
+import json, os, re as _re
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 CSV  = os.path.join(BASE, "DATA", "2023_연간자료_등록기반_20260316_40039.csv")
 OUT  = os.path.join(BASE, "index.html")
 
-# ── 1. 데이터 로드 ─────────────────────────────────────────────────────────────
+# ── 1. 데이터 로드 ──────────────────────────────────────────────────────────
 print("CSV 로드 중…")
 df = pd.read_csv(CSV, encoding="euc-kr", low_memory=False)
 print(f"  원본: {df.shape[0]:,}행 × {df.shape[1]}컬럼")
 
-df   = df[df["경영_매출금액"] <= 10_000].copy()   # 이상값 제거 (>100억)
-food = df[df["산업대분류코드"] == "I"].copy()       # 요식업 필터
-print(f"  요식업: {len(food):,}행")
+df = df[df["경영_매출금액"] <= 10_000].copy()   # 이상값 제거 (>100억)
 
-# ── 2. 전처리 ──────────────────────────────────────────────────────────────────
-pos = food[food["경영_매출금액"] > 0].copy()
+# 음식점업 필터 (숙박·음식점업 I 중 음식점업 56)
+rest = df[(df["산업대분류코드"] == "I") & (df["산업중분류코드"] == 56)].copy()
+print(f"  음식점업(중분류56): {len(rest):,}행")
 
+# 매출 > 0 인 행만 비용구조 분석에 사용
+pos = rest[rest["경영_매출금액"] > 0].copy()
+
+# ── 2. 파생 컬럼 ────────────────────────────────────────────────────────────
 RATIOS = {
     "원가율":     "경영_영업비용_매출원가",
     "인건비율":   "경영_영업비용_급여총액",
@@ -36,9 +39,87 @@ for lbl, col in RATIOS.items():
     pos[lbl] = (pos[col] / pos["경영_매출금액"] * 100).round(2)
 RLBLS = list(RATIOS.keys())
 
-# ── 3. 애로사항 집계 ───────────────────────────────────────────────────────────
-# 각 컬럼이 1/NaN 플래그 구조 → 컬럼별 1의 개수 카운트
-# "기타" 제외 9개 항목만 사용
+# 종사자규모
+def size_label(n):
+    if n == 1:   return "1인"
+    if n <= 3:   return "2~3인"
+    return "4~9인"
+
+pos["종사자규모"] = pos["일반_합계종사자수"].clip(upper=9).apply(size_label)
+rest["종사자규모"] = rest["일반_합계종사자수"].clip(upper=9).apply(size_label)
+SIZE_ORDER = ["1인", "2~3인", "4~9인"]
+
+# 고용형태
+long_col  = "일반_근로계약기간_1년이상_종사자수"
+short_col = "일반_근로계약기간_3개월미만_종사자수"
+def emp_type(row):
+    lt = row.get(long_col,  0) or 0
+    st = row.get(short_col, 0) or 0
+    if lt == 0 and st == 0: return "해당없음"
+    if lt >= st:             return "장기중심"
+    return "단기중심"
+
+pos["고용형태"] = pos.apply(emp_type, axis=1)
+EMP_ORDER = ["장기중심", "단기중심", "해당없음"]
+
+# 프랜차이즈
+pos["프랜차이즈"] = pos["일반_프랜차이즈가맹점여부"].map({1: "프랜차이즈", 2: "독립"}).fillna("독립")
+FRAN_ORDER = ["프랜차이즈", "독립"]
+
+# 연령대
+AGE_MAP = {1: "20대이하", 2: "30대", 3: "40대", 4: "50대", 5: "60대", 6: "70대+"}
+pos["연령대"] = pos["대표자연령대코드"].map(AGE_MAP)
+AGE_ORDER = ["20대이하", "30대", "40대", "50대", "60대", "70대+"]
+
+# 운영연수 (2023 기준년도 - 창업연도)
+pos["운영연수"] = (2023 - pos["일반_창업인수승계_연도"]).clip(lower=0)
+def tenure_label(y):
+    if pd.isna(y): return None
+    y = int(y)
+    if y <= 2:  return "~2년"
+    if y <= 5:  return "3~5년"
+    if y <= 10: return "6~10년"
+    if y <= 20: return "11~20년"
+    return "21년+"
+pos["운영연수구간"] = pos["운영연수"].apply(tenure_label)
+TENURE_ORDER = ["~2년", "3~5년", "6~10년", "11~20년", "21년+"]
+
+# 창업횟수
+def startup_label(n):
+    if pd.isna(n): return None
+    n = int(n)
+    if n == 1: return "1회"
+    if n == 2: return "2회"
+    return "3회+"
+pos["창업횟수구간"] = pos["일반_창업횟수"].apply(startup_label)
+STARTUP_ORDER = ["1회", "2회", "3회+"]
+
+# 지역
+METRO_CODES  = {11, 23, 31}        # 서울·인천·경기 (수도권)
+MAJOR_CITIES = {21, 22, 24, 25, 26} # 부산·대구·광주·대전·울산 (광역시)
+def region_label(code):
+    if pd.isna(code): return "기타"
+    code = int(code)
+    if code in METRO_CODES:   return "수도권"
+    if code in MAJOR_CITIES:  return "광역시"
+    return "기타"
+pos["지역"] = pos["행정구역시도코드"].apply(region_label)
+REGION_ORDER = ["수도권", "광역시", "기타"]
+
+# 매출구간 (백만원 기준, 경계값 하위 구간 포함)
+def rev_label(v):
+    if v <= 36:  return "L1"
+    if v <= 72:  return "L2"
+    if v <= 120: return "L3"
+    return "L4"
+pos["매출구간"] = pos["경영_매출금액"].apply(rev_label)
+REV_ORDER  = ["L1", "L2", "L3", "L4"]
+REV_LABELS = {"L1": "~3,600만", "L2": "3,600~7,200만", "L3": "7,200만~1.2억", "L4": "1.2억+"}
+
+# ── 3. 공통 집계 함수 ────────────────────────────────────────────────────────
+CLOSURE_COL = "사업전환_운영계획코드"
+CLOSURE_LABELS = {1: "계속운영", 2: "사업전환", 3: "폐업후취업", 4: "폐업·은퇴"}
+
 HCOL_MAP = {
     f"경영_애로사항{i}코드": name
     for i, name in enumerate([
@@ -49,111 +130,218 @@ HCOL_MAP = {
 }
 
 def cnt_hard(sub):
-    """9개 항목 전체를 비율(%)로 반환. 원본 건수(counts)도 함께 저장."""
     n = len(sub)
+    if n == 0: return None
     cnt = {
         name: int((sub[col] == 1).sum())
         for col, name in HCOL_MAP.items()
         if col in sub.columns
     }
-    ranked = sorted(cnt.items(), key=lambda x: -x[1])   # 비율 내림차순
+    ranked = sorted(cnt.items(), key=lambda x: -x[1])
     return {
         "labels": [r[0] for r in ranked],
         "rates":  [round(r[1] / n * 100, 1) for r in ranked],
         "counts": [r[1] for r in ranked],
     }
 
-# ── 4. 세그먼트 정의 ───────────────────────────────────────────────────────────
-def wfilt(lo, hi=None):
-    """종사자 수 필터"""
-    if hi is None:
-        return lambda df: df["일반_합계종사자수"] >= lo
-    if lo == hi:
-        return lambda df: df["일반_합계종사자수"] == lo
-    return lambda df: df["일반_합계종사자수"].between(lo, hi)
-
-def lfilt(lo=None, hi=None):
-    """매출 구간 필터 (단위: 백만원, lo 포함 hi 미포함)"""
-    if lo is None:
-        return lambda df: df["경영_매출금액"] < hi
-    if hi is None:
-        return lambda df: df["경영_매출금액"] >= lo
-    return lambda df: (df["경영_매출금액"] >= lo) & (df["경영_매출금액"] < hi)
-
-# (key, 필터함수, 표시 레이블)
-WDEF = [
-    ("S1", wfilt(1, 1),   "1명"),
-    ("S2", wfilt(2, 3),   "2~3명"),
-    ("S3", wfilt(4, 9),   "4~9명"),
-    ("S4", wfilt(10),     "10명+"),
-]
-LDEF = [
-    ("L4", lfilt(120),       "1.2억+"),
-    ("L3", lfilt(72,  120),  "7,200만~1.2억"),
-    ("L2", lfilt(36,  72),   "3,600만~7,200만"),
-    ("L1", lfilt(hi=36),     "~3,600만"),
-]
-
-# ── 5. 16세그먼트 계산 ─────────────────────────────────────────────────────────
-MIN_N = 5  # 통계적으로 의미 있는 최소 표본 수
-
-segs = {}
-for wk, wfn, _ in WDEF:
-    for lk, lfn, _ in LDEF:
-        key = f"{wk}x{lk}"
-        sub = pos[wfn(pos) & lfn(pos)]
-        n   = len(sub)
-
-        if n < MIN_N:
-            segs[key] = {
-                "n": n, "weighted": 0, "profit_rate": None,
-                "cost": None, "hardship": None, "closure_pct": None, "매출중앙": None,
-            }
-            continue
-
-        closure_col = "사업전환_운영계획코드"
-        closure_pct = (
-            round(float(sub[closure_col].isin([3, 4]).mean() * 100), 1)
-            if closure_col in sub.columns else None
-        )
-
-        segs[key] = {
-            "n":           n,
-            "weighted":    int(round(sub["사업체수가중값"].sum())),
-            "profit_rate": round(float(sub["영업이익률"].median()), 1),
-            "cost":        {k: round(float(sub[k].median()), 1) for k in RLBLS},
-            "hardship":    cnt_hard(sub),
-            "closure_pct": closure_pct,
-            "매출중앙":    int(sub["경영_매출금액"].median()),
+def seg_stats(sub):
+    """서브셋 → 핵심 지표 딕셔너리"""
+    n = len(sub)
+    if n < 5:
+        return {"n": n, "weighted": 0, "profit_rate": None, "cost": None,
+                "hardship": None, "closure_pct": None, "closure_dist": None,
+                "revenue_median": None}
+    weighted = int(round(sub["사업체수가중값"].sum()))
+    closure_pct = None
+    closure_dist = None
+    if CLOSURE_COL in sub.columns:
+        closure_pct = round(float(sub[CLOSURE_COL].isin([3, 4]).mean() * 100), 1)
+        total_c = len(sub)
+        closure_dist = {
+            lbl: round(float((sub[CLOSURE_COL] == code).sum() / total_c * 100), 1)
+            for code, lbl in CLOSURE_LABELS.items()
         }
-
-# 결과 요약 출력
-print("\n16세그먼트 요약 (영업이익률 중앙값):")
-header = "       " + "  ".join(f"{wk:>12}" for wk, *_ in WDEF)
-print(header)
-for lk, _, llbl in LDEF:
-    row = f"{lk}({llbl[:6]})"
-    for wk, *_ in WDEF:
-        s  = segs[f"{wk}x{lk}"]
-        pr = f"{s['profit_rate']:+.1f}%  n={s['n']}" if s["profit_rate"] is not None else "  N/A      "
-        row += f"  {pr:>12}"
-    print(row)
-
-# ── 6. JSON 직렬화 ─────────────────────────────────────────────────────────────
-DATA_JSON = json.dumps({
-    "grid": {
-        "workers":       [w for w, *_ in WDEF],
-        "worker_labels": {w: l for w, _, l in WDEF},
-        "levels":        [l for l, *_ in LDEF],
-        "level_labels":  {l: lbl for l, _, lbl in LDEF},
-        "segments":      segs,
+    cost = {k: round(float(sub[k].median()), 1) for k in RLBLS}
+    return {
+        "n":              n,
+        "weighted":       weighted,
+        "profit_rate":    round(float(sub["영업이익률"].median()), 1),
+        "cost":           cost,
+        "hardship":       cnt_hard(sub),
+        "closure_pct":    closure_pct,
+        "closure_dist":   closure_dist,
+        "revenue_median": int(round(sub["경영_매출금액"].median() * 100)),  # 만원
     }
+
+def group_stats(sub, col, order):
+    """컬럼 기준 그룹별 seg_stats 반환"""
+    result = {}
+    for key in order:
+        s = sub[sub[col] == key]
+        result[key] = seg_stats(s)
+    return result
+
+# ── 4. 섹션 1: 산업 개요 ────────────────────────────────────────────────────
+print("\n섹션 1: 산업 개요 집계…")
+overall = seg_stats(pos)
+overall["total_rest_n"] = len(rest)
+
+# 매출구간 분포
+rev_dist = []
+for k in REV_ORDER:
+    s = pos[pos["매출구간"] == k]
+    rev_dist.append({
+        "key": k,
+        "label": REV_LABELS[k],
+        "n": len(s),
+        "pct": round(len(s) / len(pos) * 100, 1),
+        "weighted": int(round(s["사업체수가중값"].sum())),
+    })
+
+# 종사자 규모 분포
+size_dist = []
+for k in SIZE_ORDER:
+    s = pos[pos["종사자규모"] == k]
+    size_dist.append({
+        "label": k,
+        "n": len(s),
+        "pct": round(len(s) / len(pos) * 100, 1),
+        "weighted": int(round(s["사업체수가중값"].sum())),
+    })
+
+# 운영계획 분포
+closure_dist_all = {}
+if CLOSURE_COL in pos.columns:
+    total_c = len(pos)
+    for code, lbl in CLOSURE_LABELS.items():
+        cnt = int((pos[CLOSURE_COL] == code).sum())
+        closure_dist_all[lbl] = {"n": cnt, "pct": round(cnt / total_c * 100, 1)}
+
+sec1 = {
+    "overview":      overall,
+    "rev_dist":      rev_dist,
+    "size_dist":     size_dist,
+    "closure_dist":  closure_dist_all,
+    "hardship":      cnt_hard(pos),
+}
+
+# ── 5. 섹션 2: 비용구조 ─────────────────────────────────────────────────────
+print("섹션 2: 비용구조 집계…")
+
+by_size_rev = {}
+for sz in SIZE_ORDER:
+    by_size_rev[sz] = {}
+    sub_sz = pos[pos["종사자규모"] == sz]
+    for rk in REV_ORDER:
+        sub_r = sub_sz[sub_sz["매출구간"] == rk]
+        by_size_rev[sz][rk] = seg_stats(sub_r)
+
+sec2 = {
+    "size_order":  SIZE_ORDER,
+    "rev_order":   REV_ORDER,
+    "rev_labels":  REV_LABELS,
+    "by_size":     group_stats(pos, "종사자규모", SIZE_ORDER),
+    "by_revenue":  {k: {"label": REV_LABELS[k], **seg_stats(pos[pos["매출구간"] == k])} for k in REV_ORDER},
+    "by_size_rev": by_size_rev,
+}
+
+# ── 6. 섹션 3: 규모×고용형태 ────────────────────────────────────────────────
+print("섹션 3: 규모×고용형태 집계…")
+
+cells_se = {}
+for sz in SIZE_ORDER:
+    for em in EMP_ORDER:
+        key = f"{sz}x{em}"
+        sub = pos[(pos["종사자규모"] == sz) & (pos["고용형태"] == em)]
+        cells_se[key] = seg_stats(sub)
+
+sec3 = {
+    "size_order": SIZE_ORDER,
+    "emp_order":  EMP_ORDER,
+    "by_size":    group_stats(pos, "종사자규모", SIZE_ORDER),
+    "by_emp":     group_stats(pos, "고용형태",   EMP_ORDER),
+    "cells":      cells_se,
+}
+
+# ── 7. 섹션 4: 프랜차이즈×고용형태 ─────────────────────────────────────────
+print("섹션 4: 프랜차이즈×고용형태 집계…")
+
+cells_fe = {}
+for fr in FRAN_ORDER:
+    for em in EMP_ORDER:
+        key = f"{fr}x{em}"
+        sub = pos[(pos["프랜차이즈"] == fr) & (pos["고용형태"] == em)]
+        cells_fe[key] = seg_stats(sub)
+
+sec4 = {
+    "fran_order": FRAN_ORDER,
+    "emp_order":  EMP_ORDER,
+    "by_fran":    group_stats(pos, "프랜차이즈", FRAN_ORDER),
+    "by_emp":     group_stats(pos, "고용형태",   EMP_ORDER),
+    "cells":      cells_fe,
+}
+
+# ── 8. 섹션 5: 연령대 ───────────────────────────────────────────────────────
+print("섹션 5: 연령대 집계…")
+
+age_valid = [a for a in AGE_ORDER if (pos["연령대"] == a).sum() >= 5]
+sec5 = {
+    "age_order": age_valid,
+    "by_age":    group_stats(pos, "연령대", age_valid),
+}
+
+# ── 9. 섹션 6: 창업경험×운영연수 ────────────────────────────────────────────
+print("섹션 6: 창업경험×운영연수 집계…")
+
+cells_st = {}
+for su in STARTUP_ORDER:
+    for te in TENURE_ORDER:
+        key = f"{su}x{te}"
+        sub = pos[(pos["창업횟수구간"] == su) & (pos["운영연수구간"] == te)]
+        cells_st[key] = seg_stats(sub)
+
+sec6 = {
+    "startup_order": STARTUP_ORDER,
+    "tenure_order":  TENURE_ORDER,
+    "by_startup":    group_stats(pos, "창업횟수구간", STARTUP_ORDER),
+    "by_tenure":     group_stats(pos, "운영연수구간", TENURE_ORDER),
+    "cells":         cells_st,
+}
+
+# ── 10. 섹션 7: 지역분석 ────────────────────────────────────────────────────
+print("섹션 7: 지역 집계…")
+
+sec7 = {
+    "region_order": REGION_ORDER,
+    "by_region":    group_stats(pos, "지역", REGION_ORDER),
+}
+
+# ── 11. 요약 출력 ─────────────────────────────────────────────────────────
+print(f"\n전체 표본: {len(pos):,}행")
+print("\n종사자규모별 영업이익률 중앙값:")
+for sz in SIZE_ORDER:
+    s = sec2["by_size"][sz]
+    pr = f"{s['profit_rate']:+.1f}%" if s["profit_rate"] is not None else "N/A"
+    print(f"  {sz}: {pr}  (n={s['n']})")
+
+print("\n지역별 영업이익률 중앙값:")
+for rg in REGION_ORDER:
+    s = sec7["by_region"][rg]
+    pr = f"{s['profit_rate']:+.1f}%" if s["profit_rate"] is not None else "N/A"
+    print(f"  {rg}: {pr}  (n={s['n']})")
+
+# ── 12. JSON 직렬화 ──────────────────────────────────────────────────────────
+DATA_JSON = json.dumps({
+    "sec1": sec1,
+    "sec2": sec2,
+    "sec3": sec3,
+    "sec4": sec4,
+    "sec5": sec5,
+    "sec6": sec6,
+    "sec7": sec7,
 }, ensure_ascii=False)
 
-# ── 7. index.html에 데이터 주입 ────────────────────────────────────────────────
-# index.html의 UI 코드는 그대로 유지하고 `const D = {...};` 라인만 교체한다.
-import re as _re
-
+# ── 13. index.html에 데이터 주입 ────────────────────────────────────────────
 with open(OUT, encoding="utf-8") as f:
     html = f.read()
 
