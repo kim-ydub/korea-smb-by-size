@@ -39,26 +39,23 @@ for lbl, col in RATIOS.items():
     pos[lbl] = (pos[col] / pos["경영_매출금액"] * 100).round(2)
 RLBLS = list(RATIOS.keys())
 
-# 종사자규모
-def size_label(n):
-    if n == 1:  return "1인"
-    if n <= 3:  return "2~3인"
-    return "4~9인"
-
-pos["종사자규모"] = pos["일반_합계종사자수"].clip(upper=9).apply(size_label)
+# 종사자규모 — pd.cut 벡터화 (경계값: 이하 기준 right=True)
+pos["종사자규모"] = pd.cut(
+    pos["일반_합계종사자수"].clip(upper=9),
+    bins=[0, 1, 3, 9], labels=["1인", "2~3인", "4~9인"], right=True,
+).astype(str)
 SIZE_ORDER = ["1인", "2~3인", "4~9인"]
 
-# 고용형태
+# 고용형태 — np.select 벡터화 (axis=1 apply 제거)
 long_col  = "일반_근로계약기간_1년이상_종사자수"
 short_col = "일반_근로계약기간_3개월미만_종사자수"
-def emp_type(row):
-    lt = row.get(long_col,  0) or 0
-    st = row.get(short_col, 0) or 0
-    if lt == 0 and st == 0: return "해당없음"
-    if lt >= st:            return "장기중심"
-    return "단기중심"
-
-pos["고용형태"] = pos.apply(emp_type, axis=1)
+_lt = pos[long_col].fillna(0)
+_st = pos[short_col].fillna(0)
+pos["고용형태"] = np.select(
+    [(_lt == 0) & (_st == 0), _lt >= _st],
+    ["해당없음", "장기중심"],
+    default="단기중심",
+)
 EMP_ORDER = ["장기중심", "단기중심", "해당없음"]
 
 # 프랜차이즈
@@ -70,48 +67,50 @@ AGE_MAP = {30: "30대", 40: "40대", 50: "50대", 60: "60대", 70: "70대+"}
 pos["연령대"] = pos["대표자연령대코드"].map(AGE_MAP)
 AGE_ORDER = ["30대", "40대", "50대", "60대", "70대+"]
 
-# 운영연수
+# 운영연수 — pd.cut 벡터화
 pos["운영연수"] = (2023 - pos["일반_창업인수승계_연도"]).clip(lower=0)
-def tenure_label(y):
-    if pd.isna(y): return None
-    y = int(y)
-    if y <= 2:  return "~2년"
-    if y <= 5:  return "3~5년"
-    if y <= 10: return "6~10년"
-    if y <= 20: return "11~20년"
-    return "21년+"
-pos["운영연수구간"] = pos["운영연수"].apply(tenure_label)
+pos["운영연수구간"] = pd.cut(
+    pos["운영연수"],
+    bins=[0, 2, 5, 10, 20, float("inf")],
+    labels=["~2년", "3~5년", "6~10년", "11~20년", "21년+"],
+    right=True,
+)
 TENURE_ORDER = ["~2년", "3~5년", "6~10년", "11~20년", "21년+"]
 
-# 창업횟수
-def startup_label(n):
-    if pd.isna(n): return None
-    n = int(n)
-    if n == 1: return "1회"
-    if n == 2: return "2회"
-    return "3회+"
-pos["창업횟수구간"] = pos["일반_창업횟수"].apply(startup_label)
+# 창업횟수 — pd.cut 벡터화
+pos["창업횟수구간"] = pd.cut(
+    pos["일반_창업횟수"],
+    bins=[0, 1, 2, float("inf")],
+    labels=["1회", "2회", "3회+"],
+    right=True,
+)
 STARTUP_ORDER = ["1회", "2회", "3회+"]
 
-# 지역
+# 지역 — np.select 벡터화
 METRO_CODES  = {11, 23, 31}
 MAJOR_CITIES = {21, 22, 24, 25, 26}
 def region_label(code):
+    """시도코드 → 지역 레이블 (시도별 집계에서 재사용)"""
     if pd.isna(code): return "기타"
     code = int(code)
     if code in METRO_CODES:  return "수도권"
     if code in MAJOR_CITIES: return "광역시"
     return "기타"
-pos["지역"] = pos["행정구역시도코드"].apply(region_label)
+_codes = pos["행정구역시도코드"].fillna(-1).astype(int)
+pos["지역"] = np.select(
+    [_codes.isin(METRO_CODES), _codes.isin(MAJOR_CITIES)],
+    ["수도권", "광역시"],
+    default="기타",
+)
 REGION_ORDER = ["수도권", "광역시", "기타"]
 
-# 매출구간 (경계값 하위 구간 포함)
-def rev_label(v):
-    if v <= 36:  return "L1"
-    if v <= 72:  return "L2"
-    if v <= 120: return "L3"
-    return "L4"
-pos["매출구간"] = pos["경영_매출금액"].apply(rev_label)
+# 매출구간 — pd.cut 벡터화 (경계값 하위 구간 포함, right=True)
+pos["매출구간"] = pd.cut(
+    pos["경영_매출금액"],
+    bins=[0, 36, 72, 120, float("inf")],
+    labels=["L1", "L2", "L3", "L4"],
+    right=True,
+).astype(str)
 REV_ORDER  = ["L1", "L2", "L3", "L4"]
 REV_LABELS = {"L1": "~3,600만", "L2": "3,600~7,200만", "L3": "7,200만~1.2억", "L4": "1.2억+"}
 
@@ -127,15 +126,13 @@ HCOL_MAP = {
         "인력관리", "판로개척(온라인)", "디지털 기술도입",
     ], start=1)
 }
+# 실제 존재하는 컬럼만 1회 필터링 (cnt_hard 내부 루프마다 체크 불필요)
+HCOLS = {col: name for col, name in HCOL_MAP.items() if col in pos.columns}
 
 def cnt_hard(sub):
     n = len(sub)
     if n == 0: return None
-    cnt = {
-        name: int((sub[col] == 1).sum())
-        for col, name in HCOL_MAP.items()
-        if col in sub.columns
-    }
+    cnt = {name: int((sub[col] == 1).sum()) for col, name in HCOLS.items()}
     ranked = sorted(cnt.items(), key=lambda x: -x[1])
     return {
         "labels": [r[0] for r in ranked],
@@ -160,10 +157,9 @@ def seg_stats(sub, min_n=5):
     closure_pct  = None
     closure_dist = None
     if CLOSURE_COL in sub.columns:
-        closure_pct = round(float(sub[CLOSURE_COL].isin([3, 4]).mean() * 100), 1)
-        total_c = len(sub)
+        closure_pct  = round(float(sub[CLOSURE_COL].isin([3, 4]).mean() * 100), 1)
         closure_dist = {
-            lbl: round(float((sub[CLOSURE_COL] == code).sum() / total_c * 100), 1)
+            lbl: round(float((sub[CLOSURE_COL] == code).sum() / n * 100), 1)
             for code, lbl in CLOSURE_LABELS.items()
         }
 
@@ -293,8 +289,6 @@ by_age    = group_stats(pos, "연령대", age_valid)
 # 디지털/배달 추가 지표 (연령대별)
 for age in age_valid:
     sub_age = pos[pos["연령대"] == age]
-    if len(sub_age) < 5:
-        continue
     extra = {}
     # 배달앱·온라인 매출 실적
     dcol = "경영_전자상거래_매출실적여부"

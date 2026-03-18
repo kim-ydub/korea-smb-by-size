@@ -378,8 +378,9 @@ function buildXtab(tableId, rowKeys, colKeys, cellFn, rowLabel, colLabel, metric
         // 데이터는 있으나 표본 부족 (min_n 미달)
         html += `<td class="pr-none" style="opacity:0.45"><span style="font-size:12px">n 부족</span><div class="cell-n">n=${cell.n}</div></td>`;
       } else {
+        const unit = mu(metric);
         const cls  = metric === 'pr' ? prClass(val) : '';
-        const disp = mIsKrw(metric) ? fmtN(val) + mu(metric) : val.toFixed(1) + mu(metric);
+        const disp = mIsKrw(metric) ? fmtN(val) + unit : val.toFixed(1) + unit;
         html += `<td class="has-data"><span class="cell-main ${cls}">${disp}</span><div class="cell-n">n=${cell.n} | 폐업 ${cell.closure_pct != null ? cell.closure_pct.toFixed(1)+'%' : '-'}</div></td>`;
       }
     });
@@ -790,31 +791,28 @@ function hBarOpts(maxVal, unit) {
             const city = ctx.dataset.label, seg = byC[city];
             return [` ${city} (${seg?.region_type || ''})`, ` 임차료율: ${ctx.parsed.x.toFixed(1)}%`, ` 월 영업이익: ${ctx.parsed.y.toLocaleString()}만원`, ` 영업이익률: ${seg?.profit_rate?.toFixed(1) ?? '-'}%`, ` 추정 사업체: ${seg?.weighted?.toLocaleString() ?? '-'}개`];
           }}},
-          // 각 버블 위에 시도명 레이블
-          datalabels: { display: false },
         },
         scales: {
           x: { title: { display: true, text: '임차료율 (%)' }, grid: { color: '#f2f2ed' } },
           y: { title: { display: true, text: '월 영업이익 (만원)' }, grid: { color: '#f2f2ed' } },
         },
-        // 버블 위 텍스트 레이블: afterDraw 플러그인
-        animation: { onComplete: function(e) {
-          const chart = e.chart;
-          const ctx2 = chart.ctx;
-          ctx2.save();
-          ctx2.font = '11px Apple SD Gothic Neo, sans-serif';
-          ctx2.fillStyle = '#3d3d38';
-          ctx2.textAlign = 'center';
-          chart.data.datasets.forEach((ds, di) => {
-            const meta = chart.getDatasetMeta(di);
-            if (!meta.hidden && meta.data.length) {
-              const pt = meta.data[0];
-              ctx2.fillText(ds.label, pt.x, pt.y - pt.options.radius - 4);
-            }
-          });
-          ctx2.restore();
-        }}
-      }
+      },
+      // 버블 위 시도명 텍스트: afterDraw 인라인 플러그인 (animation.onComplete 대비 hover/tooltip 재렌더 시에도 안정적)
+      plugins: [{ afterDraw(chart) {
+        const ctx2 = chart.ctx;
+        ctx2.save();
+        ctx2.font = '11px Apple SD Gothic Neo, sans-serif';
+        ctx2.fillStyle = '#3d3d38';
+        ctx2.textAlign = 'center';
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta.hidden && meta.data.length) {
+            const pt = meta.data[0];
+            ctx2.fillText(ds.label, pt.x, pt.y - pt.options.radius - 4);
+          }
+        });
+        ctx2.restore();
+      }}]
     });
     // 범례 수동 렌더링
     const legEl = document.getElementById('ch-region-bubble')?.parentElement;
@@ -822,9 +820,9 @@ function hBarOpts(maxVal, unit) {
       const leg = document.createElement('div');
       leg.className = 'city-legend';
       leg.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:12px;color:#6b6b62';
-      [['수도권','#1e261b'],['광역시','#587638'],['기타','#95a961']].forEach(([label, col]) => {
-        leg.innerHTML += `<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:50%;background:${col};display:inline-block"></span>${label}</span>`;
-      });
+      leg.innerHTML = [['수도권','#1e261b'],['광역시','#587638'],['기타','#95a961']].map(([label, col]) =>
+        `<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:50%;background:${col};display:inline-block"></span>${label}</span>`
+      ).join('');
       legEl.appendChild(leg);
     }
   }
