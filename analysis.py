@@ -143,16 +143,16 @@ def cnt_hard(sub):
         "counts": [r[1] for r in ranked],
     }
 
-def seg_stats(sub):
-    """서브셋 → 핵심 지표 딕셔너리"""
+def seg_stats(sub, min_n=5):
+    """서브셋 → 핵심 지표 딕셔너리. min_n 미만이면 수치 지표를 None으로 반환."""
     n = len(sub)
     empty = {
         "n": n, "weighted": 0, "profit_rate": None, "cost": None,
         "hardship": None, "closure_pct": None, "closure_dist": None,
         "revenue_median": None, "monthly_revenue": None,
-        "monthly_profit": None, "neg_pct": None,
+        "monthly_profit": None, "neg_pct": None, "rent_rate": None,
     }
-    if n < 5:
+    if n < min_n:
         return empty
 
     weighted = int(round(sub["사업체수가중값"].sum()))
@@ -167,11 +167,12 @@ def seg_stats(sub):
             for code, lbl in CLOSURE_LABELS.items()
         }
 
-    cost           = {k: round(float(sub[k].median()), 1) for k in RLBLS}
-    revenue_annual = int(round(sub["경영_매출금액"].median() * 100))   # 만원/년
-    monthly_revenue = int(round(revenue_annual / 12))                  # 만원/월
+    cost            = {k: round(float(sub[k].median()), 1) for k in RLBLS}
+    revenue_annual  = int(round(sub["경영_매출금액"].median() * 100))   # 만원/년
+    monthly_revenue = int(round(revenue_annual / 12))                   # 만원/월
     monthly_profit  = int(round(float(sub["경영_영업이익"].median()) * 100 / 12))
     neg_pct         = round(float((sub["경영_영업이익"] < 0).mean() * 100), 1)
+    rent_rate       = cost["임차료율"]  # 편의 단축키 (cost와 동일값)
 
     return {
         "n":               n,
@@ -185,10 +186,11 @@ def seg_stats(sub):
         "monthly_revenue": monthly_revenue,
         "monthly_profit":  monthly_profit,
         "neg_pct":         neg_pct,
+        "rent_rate":       rent_rate,
     }
 
-def group_stats(sub, col, order):
-    return {key: seg_stats(sub[sub[col] == key]) for key in order}
+def group_stats(sub, col, order, min_n=5):
+    return {key: seg_stats(sub[sub[col] == key], min_n=min_n) for key in order}
 
 # ── 4. 섹션 1: 산업 개요 ────────────────────────────────────────────────────
 print("\n섹션 1: 산업 개요 집계…")
@@ -269,7 +271,10 @@ print("섹션 4: 프랜차이즈×고용형태 집계…")
 cells_fe = {}
 for fr in FRAN_ORDER:
     for em in EMP_ORDER:
-        cells_fe[f"{fr}x{em}"] = seg_stats(pos[(pos["프랜차이즈"] == fr) & (pos["고용형태"] == em)])
+        cells_fe[f"{fr}x{em}"] = seg_stats(
+            pos[(pos["프랜차이즈"] == fr) & (pos["고용형태"] == em)],
+            min_n=15,   # n<15 셀은 수치 None 처리 (신뢰도 부족)
+        )
 
 sec4 = {
     "fran_order": FRAN_ORDER,
@@ -317,20 +322,54 @@ for su in STARTUP_ORDER:
             pos[(pos["창업횟수구간"] == su) & (pos["운영연수구간"] == te)]
         )
 
+# 운영연수구간 × 고용형태 교차 집계 (min_n=10)
+tenure_emp_cells = {}
+for te in TENURE_ORDER:
+    for em in EMP_ORDER:
+        tenure_emp_cells[f"{te}x{em}"] = seg_stats(
+            pos[(pos["운영연수구간"] == te) & (pos["고용형태"] == em)],
+            min_n=10,
+        )
+
 sec6 = {
-    "startup_order": STARTUP_ORDER,
-    "tenure_order":  TENURE_ORDER,
-    "by_startup":    group_stats(pos, "창업횟수구간", STARTUP_ORDER),
-    "by_tenure":     group_stats(pos, "운영연수구간", TENURE_ORDER),
-    "cells":         cells_st,
+    "startup_order":      STARTUP_ORDER,
+    "tenure_order":       TENURE_ORDER,
+    "emp_order":          EMP_ORDER,
+    "by_startup":         group_stats(pos, "창업횟수구간", STARTUP_ORDER),
+    "by_tenure":          group_stats(pos, "운영연수구간", TENURE_ORDER),
+    "cells":              cells_st,
+    "tenure_emp_cells":   tenure_emp_cells,
 }
 
 # ── 10. 섹션 7: 지역분석 ────────────────────────────────────────────────────
 print("섹션 7: 지역 집계…")
 
+# 시도별 집계 (n<20 제외)
+CITY_MAP = {
+    11: "서울", 21: "부산", 22: "대구", 23: "인천",
+    24: "광주", 25: "대전", 26: "울산", 29: "세종",
+    31: "경기", 32: "강원", 33: "충북", 34: "충남",
+    35: "전북", 36: "전남", 37: "경북", 38: "경남", 39: "제주",
+}
+
+by_city    = {}
+city_order = []
+code_col   = pos["행정구역시도코드"].fillna(-1).astype(int)
+for code in sorted(CITY_MAP):
+    city = CITY_MAP[code]
+    sub  = pos[code_col == code]
+    stats = seg_stats(sub, min_n=20)
+    if stats["profit_rate"] is not None:   # n >= 20 통과
+        stats["is_metro"]    = code in METRO_CODES
+        stats["region_type"] = region_label(code)
+        by_city[city]        = stats
+        city_order.append(city)
+
 sec7 = {
     "region_order": REGION_ORDER,
     "by_region":    group_stats(pos, "지역", REGION_ORDER),
+    "city_order":   city_order,
+    "by_city":      by_city,
 }
 
 # ── 11. 요약 출력 ────────────────────────────────────────────────────────────
