@@ -68,7 +68,10 @@ header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
 .pr-good  { color: var(--green-3); }
 .pr-great { color: var(--green-2); }
 /* ── 지표 토글 ── */
-.metric-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.metric-toggle { display: flex; flex-wrap: wrap; gap: 6px; }
+.chart-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.chart-title-row .chart-title { margin-bottom: 0; }
+.chart-title-row .metric-toggle { flex-shrink: 0; }
 .mtbtn {
   padding: 5px 14px;
   border: 0.5px solid var(--neutral-300);
@@ -171,8 +174,10 @@ header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
       </div>
     </div>
     <hr class="divider">
-    <div class="metric-toggle" id="toggle-sec2"></div>
-    <div class="chart-title" id="xtab-cost-title" style="margin-bottom:12px">매출구간 × 종사자규모 — 영업이익률 중앙값</div>
+    <div class="chart-title-row" style="margin-bottom:12px">
+      <div class="chart-title" id="xtab-cost-title">매출구간 × 종사자규모 — 영업이익률 중앙값</div>
+      <div class="metric-toggle" id="toggle-sec2"></div>
+    </div>
     <div class="xtab-wrap"><table class="xtab" id="xtab-cost"></table></div>
   </section>
 
@@ -187,8 +192,10 @@ header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
         <div class="chart-wrap" style="height:200px"><canvas id="ch-emp-dist"></canvas></div>
       </div>
       <div>
-        <div class="metric-toggle" id="toggle-sec3"></div>
-        <div class="chart-title" id="ch-size-emp-profit-title">규모 × 고용형태별 영업이익률</div>
+        <div class="chart-title-row">
+          <div class="chart-title" id="ch-size-emp-profit-title">규모 × 고용형태별 영업이익률</div>
+          <div class="metric-toggle" id="toggle-sec3"></div>
+        </div>
         <div class="chart-wrap" style="height:200px"><canvas id="ch-size-emp-profit"></canvas></div>
       </div>
     </div>
@@ -259,10 +266,12 @@ header p  { font-size: 13px; color: var(--neutral-300); margin-top: 4px; }
     <div class="section-title">⑥ 창업경험 × 운영연수</div>
     <div class="section-desc">창업 경험과 운영 연수에 따른 성과 패턴</div>
     <p class="sec-insight">💡 2회 창업자는 면적 크고 동종경험 보유율 높음 — 학습 후 스케일업 패턴 (생존편향 주의)</p>
-    <div class="metric-toggle" id="toggle-sec6"></div>
     <div class="grid-2" style="margin-bottom:20px">
       <div>
-        <div class="chart-title" id="ch-tenure-title">운영연수별 영업이익률</div>
+        <div class="chart-title-row">
+          <div class="chart-title" id="ch-tenure-title">운영연수별 영업이익률</div>
+          <div class="metric-toggle" id="toggle-sec6"></div>
+        </div>
         <div class="chart-wrap" style="height:200px"><canvas id="ch-tenure-profit"></canvas></div>
       </div>
       <div>
@@ -655,7 +664,7 @@ function hBarOpts(maxVal, unit) {
       data: emO.map(em => {
         const c = s3.cells[`${sz}x${em}`];
         if (!c || c.profit_rate == null || c.monthly_profit == null) return null;
-        return { x: c.profit_rate, y: c.closure_pct ?? 0, r: Math.max(6, Math.min(30, Math.sqrt((c.monthly_profit || 100) / 10))), _em: em, _n: c.n, _mp: c.monthly_profit };
+        return { x: c.profit_rate, y: c.closure_pct ?? 0, r: Math.max(8, Math.min(55, (c.monthly_profit || 50) / 9)), _em: em, _n: c.n, _mp: c.monthly_profit };
       }).filter(Boolean),
       backgroundColor: szColors[sz] + 'aa', borderColor: szColors[sz],
     }))},
